@@ -32,6 +32,3 @@ API credentials are kept out of the app and out of public code repositories. Dat
 
 ## Changes
 If this policy changes, the "Last updated" date above will change.
-
-## Contact
-[YOUR EMAIL]
