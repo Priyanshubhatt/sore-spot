@@ -82,3 +82,16 @@ Flow: `replay file -> loader -> computeForecast(workouts, asOf, sensitivity) -> 
 - `create-expo-app` may object to a non-empty target folder (`docs/`, `.git`). The plan must handle this (for example scaffold into a temp folder and move, or confirm the tool accepts it) and keep this spec.
 - `altitude_change_meter` semantics and whether `sport_id` still appears are unverified until real data is exported (sub-project D). Synthetic fixtures follow the API sample in the handoff.
 - Sport-to-muscle map and eccentric constants are hand-built; a trainer or PT should review before the meeting (handoff open item 4).
+
+## Amendments (2026-09-19, found while planning)
+
+These change the spec above; where they conflict, this section wins.
+
+- **Forecast result** also carries `needsTag: string[]` (ids of untagged strength workouts) and `unmappedSports: string[]`, so callers can prompt the user instead of guessing.
+- **Extra engine files:** `constants.ts` (all tuning constants), `sensitivity.ts` (`defaultSensitivity`, `applyCheckIn`), `replay.ts` (`parseReplay`), `index.ts` (barrel).
+- **Numeric scores:** `evaluateMuscles` exposes raw scores for tests and calibration only. UI-facing output stays bands.
+- **Types:** only the WHOOP v2 `Workout` is typed for now. Recovery, sleep and cycle types come with the sub-project that first uses them.
+- **Synthetic replay** is `data/replay.synthetic.ts` (built with the scenario `workout()` builder), not a JSON file. It is validated by `parseReplay` after a JSON round trip, so it matches a real export's shape.
+- **Scenario fixtures** are TypeScript (`data/scenarios/builders.ts`, `scenarios.ts`), not JSON.
+- **Scaffold:** `create-expo-app@latest --template blank-typescript` (Expo SDK 57 at time of writing) in a temp folder, copied in, because the target folder was not empty. Web builds need `react-dom` and `react-native-web`, installed with `npx expo install`.
+- **Loader:** `data/index.ts` `loadReplay()` reads `data/replay.json` through an optional `require` in `try/catch` and falls back to the synthetic replay.
