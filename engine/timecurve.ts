@@ -1,4 +1,4 @@
-// Published DOMS time course: builds within a day, peaks ~24-72h, fades by ~day 7.
+// Hand-tuned, uncalibrated approximation of the DOMS time course. Only the shape follows the spec: onset ~12-24h, peak ~24-72h, gone by ~day 7.
 const POINTS: ReadonlyArray<readonly [hours: number, level: number]> = [
   [0, 0],
   [12, 0.25],
