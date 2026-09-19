@@ -2,7 +2,7 @@
 
 **Last updated:** September 19, 2026
 
-Sore Spot is an independent prototype built by [YOUR NAME]. It is **not affiliated with, endorsed by, or sponsored by WHOOP, Inc.** This policy explains what data the prototype accesses and how it is handled.
+Sore Spot is an independent prototype built by me. It is **not affiliated with, endorsed by, or sponsored by WHOOP, Inc.** This policy explains what data the prototype accesses and how it is handled.
 
 ## Who can use it
 Sore Spot is a personal, non-commercial prototype used by its developer to work with the developer's own WHOOP data. It is not offered to the general public.
