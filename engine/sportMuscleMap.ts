@@ -10,7 +10,8 @@ export interface SportProfile {
   scalesWithDescent: boolean;
 }
 
-// Hand-built starter map. Needs trainer/PT review before the meeting.
+// Hand-built starter map. Every weight in this file, plus STRENGTH_ECCENTRIC and TAG_MUSCLES below,
+// is hand-tuned, uncalibrated and not validated. All of it needs trainer/PT review before the meeting.
 export const SPORT_MUSCLE_MAP: Record<string, SportProfile> = {
   running: {
     muscles: { quads: 0.9, calves: 0.6, glutes: 0.6, hamstrings: 0.5 },

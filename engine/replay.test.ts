@@ -45,4 +45,33 @@ describe('parseReplay', () => {
     const pending = { ...good, score_state: 'PENDING_SCORE', score: undefined };
     expect(parseReplay({ synthetic: true, workouts: [pending] }).workouts).toHaveLength(1);
   });
+
+  it('rejects a workout whose score_state is misspelled', () => {
+    const bad = { ...good, score_state: 'scored' };
+    expect(() => parseReplay({ synthetic: true, workouts: [bad] })).toThrow(/score_state/);
+  });
+
+  it('rejects a workout with no score_state', () => {
+    const bad = { ...good, score_state: undefined };
+    expect(() => parseReplay({ synthetic: true, workouts: [bad] })).toThrow(/score_state/);
+  });
+
+  it('rejects a SCORED workout with a negative zone duration', () => {
+    const bad = {
+      ...good,
+      score: { ...good.score!, zone_durations: { ...good.score!.zone_durations, zone_two_milli: -1 } },
+    };
+    expect(() => parseReplay({ synthetic: true, workouts: [bad] })).toThrow(/zone_durations.*non-negative/);
+  });
+
+  it('rejects a SCORED workout with a non-finite zone duration', () => {
+    const bad = {
+      ...good,
+      score: {
+        ...good.score!,
+        zone_durations: { ...good.score!.zone_durations, zone_one_milli: Number.POSITIVE_INFINITY },
+      },
+    };
+    expect(() => parseReplay({ synthetic: true, workouts: [bad] })).toThrow(/zone_durations/);
+  });
 });

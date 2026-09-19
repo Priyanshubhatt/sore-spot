@@ -28,13 +28,19 @@ function checkWorkout(w: unknown, i: number): TaggedWorkout {
   if (o.session_tag !== undefined && !TAGS.includes(o.session_tag as StrengthTag)) {
     fail(id, `unknown session_tag ${String(o.session_tag)}`);
   }
+  if (o.score_state !== 'SCORED' && o.score_state !== 'PENDING_SCORE' && o.score_state !== 'UNSCORABLE') {
+    fail(id, 'score_state must be SCORED, PENDING_SCORE or UNSCORABLE');
+  }
   if (o.score_state === 'SCORED') {
     const zones = (o.score as Record<string, unknown> | undefined)?.zone_durations as
       | Record<string, unknown>
       | undefined;
     if (!zones) fail(id, 'SCORED workout is missing score.zone_durations');
     for (const k of ZONE_KEYS) {
-      if (typeof zones[k] !== 'number') fail(id, `zone_durations.${k} must be a number`);
+      const v = zones[k];
+      if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) {
+        fail(id, `zone_durations.${k} must be a non-negative finite number`);
+      }
     }
   }
   return o as unknown as TaggedWorkout;

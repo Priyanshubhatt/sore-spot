@@ -95,3 +95,4 @@ These change the spec above; where they conflict, this section wins.
 - **Scenario fixtures** are TypeScript (`data/scenarios/builders.ts`, `scenarios.ts`), not JSON.
 - **Scaffold:** `create-expo-app@latest --template blank-typescript` (Expo SDK 57 at time of writing) in a temp folder, copied in, because the target folder was not empty. Web builds need `react-dom` and `react-native-web`, installed with `npx expo install`.
 - **Loader:** `data/index.ts` `loadReplay()` reads `data/replay.json` through an optional `require` in `try/catch` and falls back to the synthetic replay.
+- **Strength eccentric factor:** tagged strength sessions use a fixed eccentric factor of 1.2 (lowering phases), a third exception beyond the two named in Section 2 (descent-scaled runs/hikes and court sports). Hand-tuned and uncalibrated like the other constants.

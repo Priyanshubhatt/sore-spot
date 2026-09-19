@@ -88,7 +88,9 @@ function weightsFor(w: TaggedWorkout): { weights: MuscleWeights; profile: SportP
     if (!w.session_tag) return 'needsTag';
     return { weights: TAG_MUSCLES[w.session_tag], profile: null };
   }
-  const profile = SPORT_MUSCLE_MAP[sport];
+  const profile = Object.prototype.hasOwnProperty.call(SPORT_MUSCLE_MAP, sport)
+    ? SPORT_MUSCLE_MAP[sport]
+    : undefined;
   if (!profile) return 'unmapped';
   return { weights: profile.muscles, profile };
 }
@@ -193,6 +195,7 @@ export function evaluateMuscles(
   return evaluateAt(resolveSessions(workouts, asOf).sessions, at, sensitivity);
 }
 
+/** `workouts` must come from `parseReplay` (or the scenario builders): the engine assumes validated input. */
 export function computeForecast(
   workouts: TaggedWorkout[],
   asOf: Date,

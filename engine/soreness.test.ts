@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { workout } from '../data/scenarios/builders';
 import {
   downhillRun, firstSoccer, flatRun, legDayOne, legDaysBackToBack, regularSoccer,
   unknownSport, untaggedStrength,
@@ -100,5 +101,14 @@ describe('computeForecast', () => {
     expect(computeForecast(downhillRun, asOf, S)).toEqual(computeForecast(downhillRun, asOf, S));
     expect(JSON.stringify(downhillRun)).toBe(workoutsBefore);
     expect(JSON.stringify(S)).toBe(sensBefore);
+  });
+
+  it('treats a sport named after an Object.prototype key as unmapped instead of throwing', () => {
+    const odd = [workout({
+      id: 'odd', sport: 'constructor', start: '2026-09-10T07:00:00Z', zoneMinutes: [0, 10, 40, 10, 0, 0],
+    })];
+    const asOf = new Date('2026-09-11T00:00:00Z');
+    expect(() => computeForecast(odd, asOf, S)).not.toThrow();
+    expect(computeForecast(odd, asOf, S).unmappedSports).toEqual(['constructor']);
   });
 });

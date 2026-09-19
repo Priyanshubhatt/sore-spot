@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, Text } from 'react-native';
 import { loadReplay } from '../data';
 import { computeForecast, defaultSensitivity, MUSCLES } from '../engine';
 
+// Fixed on purpose: the synthetic demo week is Sep 14-20 2026, so a live clock would eventually render an all-low map.
 const AS_OF = new Date('2026-09-19T20:00:00Z');
 
 export default function HelloScreen() {
