@@ -23,6 +23,7 @@ export function recentRecoveryLevels(
   asOf: Date,
   count: number = RECOVERY_WINDOW,
 ): RecoveryLevel[] {
+  if (count <= 0) return [];
   return recovery
     .filter((r) => r.score_state === 'SCORED' && r.score && Date.parse(r.created_at) <= asOf.getTime())
     .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))

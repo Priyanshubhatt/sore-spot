@@ -78,6 +78,12 @@ describe('exercise library', () => {
     }
   });
 
+  it('lists the hamstrings for the high-eccentric lunge-pattern movements, so a sore hamstring blocks them', () => {
+    const lunges = EXERCISES.filter((e) => e.pattern === 'lunge' && e.eccentric === 'high');
+    expect(lunges.length).toBeGreaterThan(0);
+    for (const e of lunges) expect(e.primary, e.id).toContain('hamstrings');
+  });
+
   it('marks holds as low-eccentric timed work', () => {
     for (const e of EXERCISES.filter((x) => x.hold)) expect(e.eccentric, e.id).toBe('low');
   });

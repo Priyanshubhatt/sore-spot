@@ -75,12 +75,12 @@ export const EXERCISES: readonly Exercise[] = [
   ex('nordic-curl', 'Assisted Nordic hamstring curl', 'hinge', ['hamstrings'], 'high', 'bodyweight'),
 
   // Lunge and single-leg pattern
-  ex('walking-lunge-db', 'Dumbbell walking lunge', 'lunge', ['quads', 'glutes'], 'high', 'dumbbells'),
-  ex('split-squat-db', 'Dumbbell split squat', 'lunge', ['quads', 'glutes'], 'high', 'dumbbells'),
-  ex('rear-foot-split-squat', 'Rear-foot-elevated split squat', 'lunge', ['quads', 'glutes'], 'high', 'dumbbells'),
+  ex('walking-lunge-db', 'Dumbbell walking lunge', 'lunge', ['quads', 'glutes', 'hamstrings'], 'high', 'dumbbells'),
+  ex('split-squat-db', 'Dumbbell split squat', 'lunge', ['quads', 'glutes', 'hamstrings'], 'high', 'dumbbells'),
+  ex('rear-foot-split-squat', 'Rear-foot-elevated split squat', 'lunge', ['quads', 'glutes', 'hamstrings'], 'high', 'dumbbells'),
   ex('reverse-lunge', 'Reverse lunge', 'lunge', ['quads', 'glutes'], 'moderate', 'bodyweight'),
   ex('lateral-lunge', 'Lateral lunge', 'lunge', ['adductors', 'glutes', 'quads'], 'moderate', 'bodyweight'),
-  ex('step-down', 'Slow step-down', 'lunge', ['quads', 'glutes'], 'high', 'bodyweight'),
+  ex('step-down', 'Slow step-down', 'lunge', ['quads', 'glutes', 'hamstrings'], 'high', 'bodyweight'),
   ex('step-up', 'Step-up', 'lunge', ['quads', 'glutes'], 'low', 'bodyweight'),
 
   // Calves

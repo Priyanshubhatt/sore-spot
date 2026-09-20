@@ -3,10 +3,29 @@ export { parseReplay } from './replay';
 export { computeForecast } from './soreness';
 export { applyCheckIn, defaultSensitivity } from './sensitivity';
 export { timecurve } from './timecurve';
-export { recoveryLevel, recentRecoveryLevels, shouldDeload, type RecoveryLevel } from './recovery';
-export { EXERCISES, type Equipment, type Goal, type Pattern, type Exercise } from './exercises';
-export { buildPlan, type Plan, type PlanRequest, type PlannedSession, type PlannedExercise, type SessionKind } from './plan';
 export {
+  DELOAD_LOW_COUNT,
+  RECOVERY_LOW_MAX,
+  RECOVERY_MEDIUM_MAX,
+  RECOVERY_WINDOW,
+  recoveryLevel,
+  recentRecoveryLevels,
+  shouldDeload,
+  type RecoveryLevel,
+} from './recovery';
+export { EXERCISES, type Eccentric, type Equipment, type Goal, type Pattern, type Exercise } from './exercises';
+export {
+  buildPlan,
+  type Plan,
+  type PlanContext,
+  type PlanRequest,
+  type PlannedSession,
+  type PlannedExercise,
+  type SessionKind,
+} from './plan';
+export {
+  EQUIPMENT,
+  GOALS,
   RED_FLAGS,
   RED_FLAG_QUESTIONS,
   checkEligibility,
@@ -20,4 +39,9 @@ export {
   type RawRequest,
   type RedFlag,
 } from './guardrails';
-export { PLAN_DISCLAIMER } from './planText';
+export {
+  MEDICAL_CONDITION_QUESTION,
+  PLAN_DISCLAIMER,
+  RED_FLAG_PROMPT,
+  UNDER_18_QUESTION,
+} from './planText';

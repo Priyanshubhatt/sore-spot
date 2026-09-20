@@ -7,6 +7,7 @@ import {
   DECLINE_GOAL,
   MEDICAL_CONDITION_MESSAGE,
   RED_FLAG_MESSAGE,
+  UNANSWERED_MESSAGE,
   UNDER_18_MESSAGE,
 } from './planText';
 
@@ -39,13 +40,14 @@ export const RED_FLAG_QUESTIONS: Record<RedFlag, string> = {
 
 export interface Blocked {
   kind: 'blocked';
-  reason: 'red-flag' | 'age' | 'condition' | 'request';
+  reason: 'red-flag' | 'age' | 'condition' | 'request' | 'unanswered';
   message: string;
 }
 
+/** `null` means the member has not answered yet. Never start these at `false`. */
 export interface Eligibility {
-  under18: boolean;
-  medicalCondition: boolean;
+  under18: boolean | null;
+  medicalCondition: boolean | null;
 }
 
 export interface RawRequest {
@@ -54,21 +56,27 @@ export interface RawRequest {
   equipment: string;
 }
 
-export function screenRedFlags(selected: readonly RedFlag[]): Blocked | null {
+const UNANSWERED: Blocked = { kind: 'blocked', reason: 'unanswered', message: UNANSWERED_MESSAGE };
+
+/** `null` means the screen was never answered; an empty list means "none of these". */
+export function screenRedFlags(selected: readonly RedFlag[] | null): Blocked | null {
+  if (selected == null) return UNANSWERED;
   if (selected.length === 0) return null;
   return { kind: 'blocked', reason: 'red-flag', message: RED_FLAG_MESSAGE };
 }
 
+/** Fails closed: anything that is not an explicit "no" blocks, and a missing answer is never called an age or a condition. */
 export function checkEligibility(e: Eligibility): Blocked | null {
-  if (e.under18) return { kind: 'blocked', reason: 'age', message: UNDER_18_MESSAGE };
-  if (e.medicalCondition) {
+  if (e?.under18 === true) return { kind: 'blocked', reason: 'age', message: UNDER_18_MESSAGE };
+  if (e?.medicalCondition === true) {
     return { kind: 'blocked', reason: 'condition', message: MEDICAL_CONDITION_MESSAGE };
   }
+  if (e?.under18 !== false || e?.medicalCondition !== false) return UNANSWERED;
   return null;
 }
 
-const GOALS: readonly Goal[] = ['muscle', 'strength'];
-const EQUIPMENT: readonly Equipment[] = ['bodyweight', 'dumbbells', 'gym'];
+export const GOALS: readonly Goal[] = ['muscle', 'strength'];
+export const EQUIPMENT: readonly Equipment[] = ['bodyweight', 'dumbbells', 'gym'];
 
 /** Only the offered goals, 3 to 5 days and the three equipment levels are accepted. */
 export function validateRequest(
@@ -92,7 +100,7 @@ export function validateRequest(
 }
 
 export interface PlanInput extends PlanContext {
-  redFlags: readonly RedFlag[];
+  redFlags: readonly RedFlag[] | null;
   eligibility: Eligibility;
   request: RawRequest;
 }

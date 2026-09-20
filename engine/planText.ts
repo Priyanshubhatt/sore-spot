@@ -64,6 +64,15 @@ export function easyDaySoreWhy(muscles: Muscle[]): string {
   return `Easy day: ${listMuscles(muscles)} predicted sore, so this day is for gentle movement instead of training.`;
 }
 
+export const EASY_REPEAT_WHY = 'Easy day: the same muscles were trained the day before.';
+
+export function avoidRepeatWhy(from: StrengthTag, to: StrengthTag): string {
+  return `Swapped ${FOCUS_TITLES[from]} for ${FOCUS_TITLES[to]} so the same muscles are not trained two days in a row.`;
+}
+
+export const HISTORY_INCOMPLETE_NOTE =
+  'Some of your workouts are not counted (untagged strength sessions or sports we do not recognize), so "new for you" notes and the number of training days may be off.';
+
 export const EASY_RECOVERY_WHY = 'Easy day: your latest recovery was low, so start the week gently.';
 export const LIGHTER_WEEK_WHY = 'Lighter week: several recent recoveries were low.';
 export const LIGHTER_WEEK_NOTE =
@@ -76,6 +85,12 @@ export function rampNote(days: number, requested: number): string {
 export const PLAN_DISCLAIMER = 'General training guidance, not medical advice.';
 
 // Guardrail messages
+export const UNANSWERED_MESSAGE =
+  'Please answer the health questions first. A plan needs an answer to every one.';
+export const RED_FLAG_PROMPT = 'Do any of these apply to you right now?';
+export const UNDER_18_QUESTION = 'Are you under 18?';
+export const MEDICAL_CONDITION_QUESTION =
+  'Do you have a medical condition that affects how you should exercise?';
 export const RED_FLAG_MESSAGE =
   'Sharp or localized pain, swelling, marked weakness, dark urine, numbness, or pain that keeps getting worse are not normal soreness. Stop training and see a clinician before continuing. If symptoms are severe or sudden, get urgent medical care.';
 export const UNDER_18_MESSAGE =

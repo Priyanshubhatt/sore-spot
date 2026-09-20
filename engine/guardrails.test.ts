@@ -15,8 +15,12 @@ import {
   DECLINE_EQUIPMENT,
   DECLINE_GOAL,
   MEDICAL_CONDITION_MESSAGE,
+  MEDICAL_CONDITION_QUESTION,
   RED_FLAG_MESSAGE,
+  RED_FLAG_PROMPT,
+  UNANSWERED_MESSAGE,
   UNDER_18_MESSAGE,
+  UNDER_18_QUESTION,
 } from './planText';
 import { defaultSensitivity } from './sensitivity';
 import { computeForecast } from './soreness';
@@ -106,6 +110,57 @@ describe('request validation', () => {
       ok: false,
       message: DECLINE_EQUIPMENT,
     });
+  });
+});
+
+describe('unanswered questions fail closed', () => {
+  it('blocks a red-flag screen that was never answered, but not one answered with none', () => {
+    expect(screenRedFlags(null)).toEqual({ kind: 'blocked', reason: 'unanswered', message: UNANSWERED_MESSAGE });
+    expect(screenRedFlags(undefined as never)).toMatchObject({ reason: 'unanswered' });
+    expect(screenRedFlags([])).toBeNull();
+  });
+
+  it('blocks eligibility unless both answers are an explicit no', () => {
+    expect(checkEligibility({ under18: null, medicalCondition: false })?.reason).toBe('unanswered');
+    expect(checkEligibility({ under18: false, medicalCondition: null })?.reason).toBe('unanswered');
+    expect(checkEligibility({} as never)?.reason).toBe('unanswered');
+    expect(checkEligibility(undefined as never)?.reason).toBe('unanswered');
+    expect(checkEligibility({ under18: 0, medicalCondition: false } as never)?.reason).toBe('unanswered');
+    expect(checkEligibility({ under18: false, medicalCondition: false })).toBeNull();
+  });
+
+  it('still names the real reason when one answer is a yes and the other is missing', () => {
+    expect(checkEligibility({ under18: true, medicalCondition: null })?.reason).toBe('age');
+    expect(checkEligibility({ under18: null, medicalCondition: true })?.reason).toBe('condition');
+  });
+
+  it('never calls a missing answer an age or a medical condition', () => {
+    expect(UNANSWERED_MESSAGE).not.toMatch(/adult|under 18|medical condition/i);
+  });
+
+  it('never returns a plan while any answer is missing', () => {
+    expect(planOrGuardrail(input({ redFlags: null }))).toMatchObject({ kind: 'blocked', reason: 'unanswered' });
+    expect(
+      planOrGuardrail(input({ eligibility: { under18: null, medicalCondition: false } })),
+    ).toMatchObject({ kind: 'blocked', reason: 'unanswered' });
+  });
+
+  it('reaches each other reason through planOrGuardrail on its own', () => {
+    expect(planOrGuardrail(input({ eligibility: { under18: true, medicalCondition: false } }))).toMatchObject({
+      reason: 'age',
+    });
+    expect(planOrGuardrail(input({ eligibility: { under18: false, medicalCondition: true } }))).toMatchObject({
+      reason: 'condition',
+    });
+    expect(
+      planOrGuardrail(input({ request: { goal: 'lose-weight', daysPerWeek: 4, equipment: 'gym' } })),
+    ).toMatchObject({ reason: 'request', message: DECLINE_GOAL });
+  });
+
+  it('has the wording for the screening screens in the scanned text file', () => {
+    expect(RED_FLAG_PROMPT.trim().length).toBeGreaterThan(0);
+    expect(UNDER_18_QUESTION).toMatch(/\?$/);
+    expect(MEDICAL_CONDITION_QUESTION).toMatch(/\?$/);
   });
 });
 

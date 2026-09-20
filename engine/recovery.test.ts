@@ -64,6 +64,10 @@ describe('recentRecoveryLevels', () => {
     expect(levels.every((l) => l === 'high')).toBe(true);
   });
 
+  it('returns nothing when asked for no records', () => {
+    expect(recentRecoveryLevels([rec('2026-09-18T06:00:00Z', 20)], asOf, 0)).toEqual([]);
+  });
+
   it('does not mutate its input', () => {
     const input = [rec('2026-09-18T06:00:00Z', 20), rec('2026-09-16T06:00:00Z', 90)];
     const before = JSON.stringify(input);

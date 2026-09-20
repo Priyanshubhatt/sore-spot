@@ -10,17 +10,20 @@ import {
 } from './exercises';
 import {
   EASY_RECOVERY_WHY,
+  EASY_REPEAT_WHY,
   EASY_TITLE,
   EFFORT_EASY,
   EFFORT_HOLD,
   EFFORT_NORMAL,
   FOCUS_TITLES,
   GOAL_WHY,
+  HISTORY_INCOMPLETE_NOTE,
   LIGHTER_WEEK_NOTE,
   LIGHTER_WEEK_WHY,
   NOVEL_NOTE,
   REST_TITLE,
   REST_WHY,
+  avoidRepeatWhy,
   easierPickNote,
   easyDaySoreWhy,
   fewerSetsNote,
@@ -88,6 +91,8 @@ const MIN_SETS = 2;
 const SLOT_SHARE_MIN = 0.6;
 const EASED_SLOT_WEIGHT = 0.5;
 const PLAN_DAYS = 7;
+/** The latest scheduled training day is day 6, so the forecast must reach it. */
+const MIN_FORECAST_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 
 const SCHEDULE: Record<3 | 4 | 5, { days: number[]; focus: StrengthTag[] }> = {
@@ -277,7 +282,14 @@ const easyDay = (day: number, why: string): PlannedSession => ({
 
 export function buildPlan(request: PlanRequest, ctx: PlanContext): Plan {
   const { forecast, workouts, recovery, asOf } = ctx;
+  if (forecast.byDay.length < MIN_FORECAST_DAYS) {
+    throw new Error(`buildPlan needs a forecast of at least ${MIN_FORECAST_DAYS} days`);
+  }
   const notes: string[] = [];
+  // The plan's claims about the member's history are only as good as the workouts we could place.
+  if (forecast.needsTag.length > 0 || forecast.unmappedSports.length > 0) {
+    notes.push(HISTORY_INCOMPLETE_NOTE);
+  }
 
   // Progressive cap: do not jump far above what the member has actually been doing.
   const cap = Math.max(3, Math.ceil(recentStrengthPerWeek(workouts, asOf)) + 2);
@@ -324,7 +336,10 @@ export function buildPlan(request: PlanRequest, ctx: PlanContext): Plan {
     }
     const dayForecast = forecast.byDay[day];
     const first = evaluate(focus, dayForecast, request.equipment, used);
-    if (first.share >= SLOT_SHARE_MIN) {
+    // A swap yesterday can leave today's scheduled focus equal to yesterday's. Never train it twice in a row.
+    const repeatsYesterday = trainedFocus.get(day - 1) === focus;
+    const tooSore = first.share < SLOT_SHARE_MIN;
+    if (!repeatsYesterday && !tooSore) {
       byDay.set(day, accept(day, first, [GOAL_WHY[request.goal]]));
       return;
     }
@@ -332,11 +347,12 @@ export function buildPlan(request: PlanRequest, ctx: PlanContext): Plan {
       if (trainedFocus.get(day - 1) === alt) continue;
       const attempt = evaluate(alt, dayForecast, request.equipment, used);
       if (attempt.share >= SLOT_SHARE_MIN) {
-        byDay.set(day, accept(day, attempt, [GOAL_WHY[request.goal], swapWhy(focus, alt, first.sore.slice(0, 4))]));
+        const reason = tooSore ? swapWhy(focus, alt, first.sore.slice(0, 4)) : avoidRepeatWhy(focus, alt);
+        byDay.set(day, accept(day, attempt, [GOAL_WHY[request.goal], reason]));
         return;
       }
     }
-    byDay.set(day, easyDay(day, easyDaySoreWhy(first.sore.slice(0, 4))));
+    byDay.set(day, easyDay(day, tooSore ? easyDaySoreWhy(first.sore.slice(0, 4)) : EASY_REPEAT_WHY));
   });
 
   const days: PlannedSession[] = [];

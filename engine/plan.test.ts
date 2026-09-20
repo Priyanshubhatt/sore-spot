@@ -5,7 +5,9 @@ import { EXERCISES, tierOf, type Equipment, type Goal } from './exercises';
 import { buildPlan, type PlanRequest } from './plan';
 import {
   EASY_RECOVERY_WHY,
+  EASY_REPEAT_WHY,
   FOCUS_TITLES,
+  HISTORY_INCOMPLETE_NOTE,
   LIGHTER_WEEK_NOTE,
   NOVEL_NOTE,
   REST_WHY,
@@ -35,6 +37,13 @@ const forecastOf = (days: DayForecast[]): Forecast => ({ byDay: days, needsTag: 
 const flat = (band: RiskBand): Forecast => forecastOf(Array.from({ length: 8 }, () => dayOf(band)));
 
 const LOWER: Muscle[] = ['quads', 'glutes', 'hamstrings', 'calves', 'adductors'];
+const UPPER: Muscle[] = ['chest', 'shoulders', 'biceps', 'triceps', 'forearms', 'upperBack'];
+
+const high = (muscles: Muscle[]): Partial<Record<Muscle, RiskBand>> =>
+  Object.fromEntries(muscles.map((m) => [m, 'high'])) as Partial<Record<Muscle, RiskBand>>;
+/** Everything Low except the muscles named for each day index. */
+const withBands = (perDay: Record<number, Partial<Record<Muscle, RiskBand>>>): Forecast =>
+  forecastOf(Array.from({ length: 8 }, (_, d) => dayOf('low', perDay[d] ?? {})));
 
 /** Twelve tagged strength sessions over the last 24 days: about 3 a week, every muscle trained. */
 const richHistory = (): TaggedWorkout[] =>
@@ -309,6 +318,84 @@ describe('equipment and goals', () => {
     const holds = trainingDays(plan).flatMap((d) => d.exercises).filter((e) => exerciseOf(e.id).hold);
     expect(holds.length).toBeGreaterThan(0);
     for (const e of holds) expect(e.reps).toBe('30 to 45 seconds');
+  });
+});
+
+describe('swaps never leave the same focus on back-to-back days', () => {
+  it('moves the next scheduled Lower to Upper after a swap to Lower, and says why', () => {
+    const plan = buildPlan(request('muscle', 4), richCtx(withBands({ 1: high(UPPER) })));
+    expect(plan.days.map((d) => d.focus)).toEqual(['lower', 'upper', null, 'upper', 'lower', null, null]);
+    expect(plan.days[0].why.some((w) => w.startsWith('Swapped Upper body for Lower body'))).toBe(true);
+    expect(plan.days[1].why.some((w) => /same muscles are not trained two days in a row/.test(w))).toBe(true);
+  });
+
+  it('falls back to an easy day when the only other focus is also sore', () => {
+    const plan = buildPlan(request('muscle', 4), richCtx(withBands({ 1: high(UPPER), 2: high(UPPER) })));
+    expect(plan.days[0].focus).toBe('lower');
+    expect(plan.days[1].kind).toBe('easy');
+    expect(plan.days[1].why).toEqual([EASY_REPEAT_WHY]);
+  });
+
+  it('holds across many sore-muscle scenarios and requests', () => {
+    const scenarios = [
+      withBands({ 1: high(UPPER) }),
+      withBands({ 1: high(LOWER), 2: high(LOWER) }),
+      withBands({ 3: high(LOWER), 5: high(UPPER) }),
+      withBands({ 1: high(UPPER), 2: high(LOWER), 3: high(UPPER) }),
+    ];
+    for (const forecast of scenarios) {
+      for (const n of [3, 4, 5] as const) {
+        const plan = buildPlan(request('muscle', n), richCtx(forecast));
+        for (let i = 1; i < plan.days.length; i++) {
+          const prev = plan.days[i - 1];
+          const cur = plan.days[i];
+          if (prev.kind === 'training' && cur.kind === 'training') {
+            expect(cur.focus, `${n} days, day ${cur.day}`).not.toBe(prev.focus);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('a High-band muscle', () => {
+  const plan = buildPlan(request('muscle', 4, 'dumbbells'), richCtx(withBands({ 2: high(['hamstrings']) })));
+  const day2 = plan.days[1];
+
+  it('gets a gentler hinge at fewer sets and easy effort, while other exercises stay normal', () => {
+    expect(day2.kind).toBe('training');
+    const thrust = day2.exercises.find((e) => e.id === 'hip-thrust-db')!;
+    expect(thrust.effort).toBe('Keep it easy.');
+    expect(thrust.sets).toBe(2);
+    const squat = day2.exercises.find((e) => e.id === 'goblet-squat')!;
+    expect(squat.effort).toBe('Stop 2 to 3 reps before failure.');
+    expect(squat.sets).toBe(3);
+  });
+
+  it('is never loaded by a high-eccentric exercise that lists it, including the lunges', () => {
+    for (const e of day2.exercises) {
+      const ex = exerciseOf(e.id);
+      if (ex.primary.includes('hamstrings')) expect(ex.eccentric, e.id).toBe('low');
+    }
+    const ids = day2.exercises.map((e) => e.id);
+    for (const blocked of ['rdl-db', 'walking-lunge-db', 'split-squat-db', 'rear-foot-split-squat', 'step-down']) {
+      expect(ids, blocked).not.toContain(blocked);
+    }
+  });
+});
+
+describe('inputs that could mislead', () => {
+  it('names the problem when the forecast is too short instead of throwing a bare TypeError', () => {
+    const short = forecastOf(Array.from({ length: 4 }, () => dayOf('low')));
+    expect(() => buildPlan(request('muscle', 5), richCtx(short))).toThrow(/at least 7 days/);
+  });
+
+  it('qualifies the plan when some of the member\'s workouts could not be placed', () => {
+    expect(buildPlan(request(), richCtx(flat('low'))).notes).not.toContain(HISTORY_INCOMPLETE_NOTE);
+    const untagged = buildPlan(request(), richCtx({ ...flat('low'), needsTag: ['w1'] }));
+    expect(untagged.notes).toContain(HISTORY_INCOMPLETE_NOTE);
+    const unmapped = buildPlan(request(), richCtx({ ...flat('low'), unmappedSports: ['curling'] }));
+    expect(unmapped.notes).toContain(HISTORY_INCOMPLETE_NOTE);
   });
 });
 
