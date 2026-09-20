@@ -8,7 +8,7 @@ const good = workout({
 
 describe('parseReplay', () => {
   it('accepts builder workouts and ignores extra top-level keys', () => {
-    const parsed = parseReplay({ synthetic: false, workouts: [good], recovery: [{}] });
+    const parsed = parseReplay({ synthetic: false, workouts: [good], sleep: [{}] });
     expect(parsed.synthetic).toBe(false);
     expect(parsed.workouts).toHaveLength(1);
   });

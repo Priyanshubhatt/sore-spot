@@ -1,4 +1,4 @@
-import type { ReplayFile, TaggedWorkout } from '../engine/types';
+import type { Recovery, ReplayFile, TaggedWorkout } from '../engine/types';
 import { workout } from './scenarios/builders';
 
 // SYNTHETIC demo data. Not from a real WHOOP account. Same shape as the real export.
@@ -40,7 +40,33 @@ const demoWeek: TaggedWorkout[] = [
   workout({ id: 'd-sat-soccer', sport: 'soccer', start: '2026-09-19T18:00:00Z', zoneMinutes: match }),
 ];
 
+// One synthetic recovery per morning, Mon Sep 14 to Sat Sep 19. Not from a real WHOOP account.
+const morning = (date: string, cycleId: number, score: number): Recovery => ({
+  cycle_id: cycleId,
+  sleep_id: `synthetic-sleep-${cycleId}`,
+  user_id: 0,
+  created_at: `${date}T06:00:00Z`,
+  updated_at: `${date}T06:00:00Z`,
+  score_state: 'SCORED',
+  score: {
+    user_calibrating: false,
+    recovery_score: score,
+    resting_heart_rate: 52 + Math.round((100 - score) / 10),
+    hrv_rmssd_milli: 40 + Math.round(score / 2),
+  },
+});
+
+const demoRecovery: Recovery[] = [
+  morning('2026-09-14', 900001, 82),
+  morning('2026-09-15', 900002, 71),
+  morning('2026-09-16', 900003, 58),
+  morning('2026-09-17', 900004, 66),
+  morning('2026-09-18', 900005, 31),
+  morning('2026-09-19', 900006, 47),
+];
+
 export const syntheticReplay: ReplayFile = {
   synthetic: true,
   workouts: [...history, ...demoWeek],
+  recovery: demoRecovery,
 };
