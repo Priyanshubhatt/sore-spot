@@ -23,18 +23,18 @@ Any UI, navigation or persistence (C1b); an LLM or free-text input; nutrition, d
 ### Schedule and sessions
 - Training days from day 1: 3 days -> days 1, 3, 5; 4 days -> 1, 2, 4, 5; 5 days -> 1, 2, 3, 5, 6. Other days are rest days ("Rest days are when your body adapts.").
 - Focus per session uses the engine's `StrengthTag` names so a planned session can later be logged with the same tag: 3 days = full, full, full; 4 days = upper, lower, upper, lower; 5 days = push, pull, lower, upper, lower.
-- Each focus has five slots by movement pattern: lower = squat, hinge, lunge, calf, core; upper = push-h, pull-h, push-v, pull-v, triceps; push = push-h, push-v, delt, triceps, core; pull = pull-v, pull-h, biceps, core, upper-back... (exact slots in the code); full = squat, push-h, pull-h, hinge, core. A slot takes the first library exercise for its pattern that fits the equipment and the soreness rules, avoiding repeats within the week where an alternative exists.
+- Each focus has five slots by movement pattern: lower = squat, hinge, lunge, calf, core; upper = push-h, pull-h, push-v, pull-v, triceps; push = push-h, push-v, delt, triceps, core; pull = pull-v, pull-h, biceps, delt, core; full = squat, push-h, pull-h, hinge, core. A slot takes the first library exercise for its pattern that fits the equipment and the soreness rules (higher equipment tiers first), avoiding repeats within the week where an alternative exists.
 
 ### Exercise library
-- 60 to 80 exercises in `engine/exercises.ts`, each with `id`, `name`, `pattern`, `primary` muscles (from the engine's 12), `equipment`, an `eccentric` demand (`low` | `moderate` | `high`: how much loaded lengthening the movement involves) and a `hold` flag for timed holds.
-- Every equipment level has at least one exercise for every slot pattern used by a template.
+- 78 exercises (the test allows 60 to 80) in `engine/exercises.ts`, each with `id`, `name`, `pattern`, `primary` muscles (from the engine's 12), `equipment`, an `eccentric` demand (`low` | `moderate` | `high`: how much loaded lengthening the movement involves) and a `hold` flag for timed holds.
+- Every equipment level has at least one exercise for every slot pattern, and (except calves) at least one `low`-eccentric option, so a sore member can always get a gentle version.
 
 ### Soreness-aware rules (the rules layer decides)
 For a session on day `d`, look at `forecast.byDay[d]` for each candidate exercise's primary muscles:
 1. **Band Low:** anything is allowed.
 2. **Band Moderate:** exercises with `high` eccentric demand are not allowed; others get one set fewer (minimum 2).
 3. **Band High:** only `low` eccentric exercises are allowed, one set fewer, effort easier.
-4. If fewer than 60% of a session's slots have an allowed exercise, try swapping the focus (lower -> upper; upper -> lower; push -> lower, pull; pull -> lower, push; full -> upper, lower), taking the first alternate with at least 60% of its slots allowed **that is not the same focus as the previous day's session**. If none works, the day becomes an `easy` day (no exercises; comfort ideas live in the app) with a `why` naming the sore muscles.
+4. A slot filled by a gentler substitute (because the preferred exercise was not allowed) counts as **half a slot**; an unfilled slot counts as zero. If the filled share of a session's slots is under 60%, try swapping the focus (lower -> upper; upper -> lower; push -> lower, pull; pull -> lower, push; full -> upper, lower), taking the first alternate with at least 60% of its slots allowed **that is not the same focus as the previous day's session**. If none works, the day becomes an `easy` day (no exercises; comfort ideas live in the app) with a `why` naming the sore muscles.
 5. Every applied change is reported in that day's `why` in plain words, naming the muscles.
 
 ### Recovery and load rules
@@ -60,7 +60,7 @@ All pure TypeScript under `/engine`, no React or Expo imports, no `Date.now()` (
 engine/types.ts          + Recovery, RecoveryScore; ReplayFile gains optional recovery (existing file, extended)
 engine/replay.ts         + validates recovery when present (existing file, extended)
 engine/recovery.ts       RecoveryLevel, recoveryLevel(score), recentRecoveryLevels(recovery, asOf), shouldDeload(levels)
-engine/exercises.ts      EXERCISES (about 70), Pattern, Equipment, Eccentric, exercise lookup helpers
+engine/exercises.ts      EXERCISES (78), Goal, Pattern, Equipment, Eccentric, tierOf, fitsEquipment
 engine/planText.ts       every user-facing plan and guardrail string, muscle names
 engine/guardrails.ts     RED_FLAGS, screenRedFlags, checkEligibility, validateRequest, planOrGuardrail
 engine/plan.ts           buildPlan(...)
@@ -77,9 +77,10 @@ WHOOP v2 recovery shape (`cycle_id`, `sleep_id`, `user_id`, `created_at`, `updat
 1. `recovery`: level boundaries (33/34, 66/67), the latest-scored selection up to `asOf`, deload at 3 low of 7 and not at 2.
 2. `exercises`: 60 to 80 exercises, unique ids, valid muscles, every template slot pattern has a candidate at every equipment level, eccentric tags present.
 3. `guardrails`: each red flag blocks; under 18 and medical condition block; validation declines 6 days, unknown goal and unknown equipment; `planOrGuardrail` order and messages.
-4. `plan` scenarios on the synthetic week: the rules above produce the expected days (for a 4-day gym plan, Sun upper, Mon an easy day because legs are sore and yesterday was upper, Wed upper by swap, Thu lower with no high-eccentric exercise for moderately sore muscles); an invariant test over many requests: for every planned exercise, moderate band means eccentric is not high and high band means eccentric is low; everything-sore forecast gives no exercises; recovery carry-over, lighter week, novelty and the days cap each have a test; bodyweight plans contain only bodyweight exercises; deterministic and non-mutating.
+4. `plan` scenarios: on the synthetic week a 4-day gym plan reads Sun upper, Mon an easy day (legs predicted sore and yesterday was upper), Tue rest, Wed upper, Thu lower with the back squat kept and the Romanian deadlift and lunge swapped for a hip thrust and a reverse lunge, Fri and Sat rest; a focus swap (Lower for Upper) when the legs are sore and yesterday was not upper; an invariant test over all 18 goal, days and equipment combinations: for every planned exercise, a moderate band means eccentric is not high and a high band means eccentric is low; an everything-High forecast plans only low-eccentric exercises; recovery carry-over, lighter week, novelty and the days cap each have a test; bodyweight and dumbbell plans respect the equipment; strength versus muscle prescriptions; deterministic and non-mutating.
 5. `planText`: banned-word scan over every string the engine can emit.
-6. Synthetic data: recovery records validate through `parseReplay`, are labeled synthetic via the replay flag, and end with a medium recovery.
+6. Recovery parsing and synthetic data: recovery records validate through `parseReplay` (bad dates, unknown states and scores outside 0 to 100 are rejected with the cycle named); the synthetic recovery round-trips and ends with a medium recovery. The existing replay test that used `recovery: [{}]` as its example of an ignored extra key now uses `sleep: [{}]`, because recovery is validated.
+7. Suite: 65 new tests (recovery 8, exercises 8, plan 23, guardrails 12, plan text 7, recovery parsing 7); the suite is 188 tests in 23 files.
 
 Non-test: `npm run typecheck`, `npm test`, `npx expo export --platform web` (the bundle must still build).
 
@@ -92,4 +93,4 @@ Non-test: `npm run typecheck`, `npm test`, `npx expo export --platform web` (the
 
 ## Definition of done
 
-Typecheck clean, all tests pass, the web bundle builds. For the demo week and a 4-day gym request, the plan reads: Sun upper body; Mon an easy day ("thigh and calf muscles are predicted sore"); Wed upper body (swapped from lower); Thu lower body with hip thrusts instead of Romanian deadlifts and fewer sets because the legs are still moderately sore; Tue, Fri and Sat rest. A red flag, an under-18 flag or a medical condition returns a clinician message and no plan.
+Typecheck clean, all tests pass, the web bundle builds. For the demo week and a 4-day gym muscle request, the plan reads: Sun upper body (upper-body exercises start a set lighter because those muscles are new to the member); Mon an easy day ("quads, glutes, hamstrings and calves predicted sore"); Tue rest; Wed upper body; Thu lower body with the back squat at fewer sets, a hip thrust instead of the Romanian deadlift and a reverse lunge instead of the walking lunge, each with its reason; Fri and Sat rest. Tagging the Wed strength session "Upper body" changes Sunday's upper day from "new for you" to "fewer sets: predicted sore". A red flag, an under-18 flag or a medical condition returns a clinician message and no plan. A request for 6 days a week or a weight-loss goal is declined with a reason.
