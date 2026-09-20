@@ -2,13 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { MUSCLES, type Driver, type RiskBand } from '../engine';
 import {
   BAND_LABELS,
+  CHECKIN_LABELS,
+  CHECKIN_NOT_TODAY,
+  CHECKIN_PROMPT,
+  COMFORT_HEADING,
   DISCLAIMER,
   DRIVER_TEXT,
+  EVIDENCE_LABELS,
+  EVIDENCE_NOTES,
   GENERIC_REASON_TEXT,
   MUSCLE_LABELS,
+  NOTHING_NEEDED_TEXT,
   NO_SORENESS_TEXT,
+  ROM_HEADING,
+  SAFETY_LINE,
+  SAVE_STRETCHING_TEXT,
+  STRETCH_HONESTY,
   SYNTHETIC_BANNER,
+  TAG_HEADING,
+  TAG_LABELS,
+  TAG_PROMPT,
   bandPhrase,
+  checkInMessage,
   needsTagNote,
   reasonsFor,
   unmappedNote,
@@ -16,6 +31,26 @@ import {
 } from './copy';
 
 const BANDS: RiskBand[] = ['low', 'moderate', 'high'];
+
+const NEW_STRINGS = [
+  CHECKIN_PROMPT,
+  CHECKIN_NOT_TODAY,
+  ...Object.values(CHECKIN_LABELS),
+  checkInMessage('quads', 1, 1.1),
+  checkInMessage('quads', 1, 0.9),
+  checkInMessage('quads', 1, 1),
+  ...Object.values(EVIDENCE_LABELS),
+  ...Object.values(EVIDENCE_NOTES),
+  COMFORT_HEADING,
+  ROM_HEADING,
+  NOTHING_NEEDED_TEXT,
+  SAVE_STRETCHING_TEXT,
+  STRETCH_HONESTY,
+  SAFETY_LINE,
+  TAG_HEADING,
+  TAG_PROMPT,
+  ...Object.values(TAG_LABELS),
+];
 const DRIVERS: Driver[] = ['novel', 'eccentric', 'high-load'];
 
 describe('copy coverage', () => {
@@ -64,9 +99,28 @@ describe('phrases', () => {
   });
 });
 
+describe('check-in and evidence copy', () => {
+  it('says what a check-in did, in words', () => {
+    expect(checkInMessage('quads', 1, 1.1)).toBe('Noted. Predictions for quads will lean a little higher.');
+    expect(checkInMessage('quads', 1, 0.9)).toBe('Noted. Predictions for quads will lean a little lower.');
+    expect(checkInMessage('upperBack', 1, 1)).toBe('Noted. Predictions for upper back will stay about the same.');
+  });
+
+  it('never claims stretching reduces soreness', () => {
+    expect(EVIDENCE_NOTES.ROM).toMatch(/not been shown to reduce soreness/);
+    expect(STRETCH_HONESTY).toMatch(/hasn't been shown to reduce soreness/);
+    expect(EVIDENCE_NOTES.COMFORT).not.toMatch(/soreness/i);
+  });
+
+  it('keeps a clinician safety line and only tags evidence for range of motion or comfort', () => {
+    expect(SAFETY_LINE).toMatch(/Stop and see a clinician/);
+    expect(Object.keys(EVIDENCE_LABELS).sort()).toEqual(['COMFORT', 'ROM']);
+  });
+});
+
 describe('honesty rule', () => {
   it('never claims diagnosis, accuracy, validation, clinical benefit, prevention or cure', () => {
-    const banned = /diagnos|accura|clinical|prevent|cure|validated|treat/i;
+    const banned = /diagnos|accura|clinical|prevent|cure|validated|treat|boost|oxygen|blood flow/i;
     const strings = [
       ...Object.values(MUSCLE_LABELS),
       ...Object.values(BAND_LABELS),
@@ -79,10 +133,14 @@ describe('honesty rule', () => {
       needsTagNote(2),
       unmappedNote(['curling']),
       unmappedNote(['curling', 'darts']),
+      ...NEW_STRINGS,
       ...BANDS.map(bandPhrase),
       ...MUSCLES.flatMap((m) => BANDS.map((b) => zoneA11yLabel(m, b))),
     ];
     for (const s of strings) expect(s).not.toMatch(banned);
+    for (const s of strings) {
+      if (/(reduce|relieve) soreness/i.test(s)) expect(s).toMatch(/(not|n't) been shown/i);
+    }
   });
 
   it('keeps the wellness disclaimer and the synthetic label', () => {

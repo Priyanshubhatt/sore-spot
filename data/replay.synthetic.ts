@@ -26,10 +26,12 @@ const history: TaggedWorkout[] = [
   easy('h-run-07', '2026-09-08'), legs('h-legs-04', '2026-09-08'), easy('h-run-08', '2026-09-10'),
 ];
 
-// Demo week, Mon Sep 14 to Sun Sep 20. Wed and Sun are rest days.
+// Demo week, Mon Sep 14 to Sun Sep 20. Sun is a rest day. The Wed strength session has no tag on purpose:
+// the engine will not guess which muscles it worked, so the app asks.
 const demoWeek: TaggedWorkout[] = [
   easy('d-mon-run', '2026-09-14'),
   legs('d-tue-legs', '2026-09-15'),
+  workout({ id: 'd-wed-strength', sport: 'weightlifting', start: '2026-09-16T17:00:00Z', zoneMinutes: lowerDay }),
   easy('d-thu-run', '2026-09-17'),
   workout({
     id: 'd-fri-hilly-run', sport: 'running', start: '2026-09-18T07:00:00Z', zoneMinutes: hillyRun,
