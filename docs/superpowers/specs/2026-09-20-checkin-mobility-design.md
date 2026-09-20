@@ -93,3 +93,16 @@ Non-test: `npm run typecheck`, `npm test`, `npx expo export --platform web`, the
 ## Definition of done
 
 Typecheck clean, all tests pass, web export builds, the scripted drive passes, and the user confirms on the phone: tapping quads at Now shows reasons, a check-in row, comfort ideas (an easy walk, foam rolling, small leg swings) with the "not shown to reduce soreness" and safety lines, and no stretches; choosing Moderate for quads shows "Noted. Predictions for quads will lean a little lower."; the "1 strength session has no muscle tag" note has a Wed Sep 16 entry, and tagging it Upper body turns chest, shoulders and upper back non-low.
+
+## Amendments (2026-09-20, found while building)
+
+These change the spec above; where they conflict, this section wins.
+
+- **Comfort ideas:** at most one move of each comfort kind, in the order light movement, self-massage, mobility (so at most 3, and fewer for a muscle without a kind, for example core has no self-massage: "Easy walk" then "Cat-cow"). The library has 37 moves.
+- **Stretches:** at most 2 range-of-motion stretches, shown for Low and Moderate and hidden for High. For Low the sheet says "Nothing needed for this muscle right now." and still offers a stretch.
+- **Check-in message:** derived from the muscle's current sensitivity against the default of 1.0 (`checkInMessage(muscle, 1, sensitivity)`), so it is always consistent with the forecast and needs no extra state.
+- **Sheet:** gained an inner `ScrollView` with the header fixed; maximum height 65% of the body area.
+- **Tagging:** `TagPrompt` sits between the legend and the notes; the "no muscle tag" note stays visible until every session is tagged.
+- **Honesty scan:** a new test (`app/honesty.test.ts`) reads every non-test file under `app/` and applies the banned-word rule and the soreness-claim rule, in addition to the string-level checks in `app/copy.test.ts`. A "hasn't been shown" or "not been shown" wording satisfies the soreness-claim rule.
+- **Tests:** 39 new tests (check-in 10, library 5, recommend 9, tagging 8, honesty 3, copy 3, synthetic data 1). The suite is 117 tests in 17 files.
+- **Deferred:** persistence of check-ins and tags across launches; the full red-flag screen and guardrails (C1); the evidence panel (C2); VoiceOver support for zones and the scrubber; a taller-than-screen sheet on very small phones still hides part of the map.

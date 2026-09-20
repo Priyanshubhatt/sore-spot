@@ -1,35 +1,62 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { loadReplay } from '../data';
-import { computeForecast, defaultSensitivity, type Muscle } from '../engine';
+import { computeForecast, defaultSensitivity, type Muscle, type StrengthTag } from '../engine';
 import { DEMO_AS_OF } from './config';
 import { BAND_ORDER, bandColor } from './body/colors';
 import { hasMuscle, type BodySide } from './body/zones';
+import { sensitivityFromCheckIns, type CheckInLevel, type CheckIns } from './checkin';
 import BodyMap from './components/BodyMap';
 import DayScrubber from './components/DayScrubber';
 import MuscleSheet from './components/MuscleSheet';
+import TagPrompt from './components/TagPrompt';
 import {
   BAND_LABELS,
   DISCLAIMER,
   SYNTHETIC_BANNER,
+  checkInMessage,
   needsTagNote,
   unmappedNote,
 } from './copy';
+import { recommend } from './mobility/recommend';
 import { dayLabel, weekdayLabel } from './scrubber';
+import { applyTags, describeWorkout, type Tags } from './tagging';
 
 const SIDES: readonly BodySide[] = ['front', 'back'];
 
 export default function BodyMapScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const replay = useMemo(() => loadReplay(), []);
-  const forecast = useMemo(
-    () => computeForecast(replay.workouts, DEMO_AS_OF, defaultSensitivity()),
-    [replay],
-  );
 
   const [side, setSide] = useState<BodySide>('front');
   const [day, setDay] = useState(0);
   const [selected, setSelected] = useState<Muscle | null>(null);
+  const [checkIns, setCheckIns] = useState<CheckIns>({});
+  const [tags, setTags] = useState<Tags>({});
+
+  // Tags change which muscles a session loads. Check-ins are then rebuilt from the default
+  // sensitivity and the default forecast for Now, so they never stack.
+  const tagged = useMemo(() => applyTags(replay.workouts, tags), [replay, tags]);
+  const base = useMemo(
+    () => computeForecast(tagged, DEMO_AS_OF, defaultSensitivity()),
+    [tagged],
+  );
+  const sensitivity = useMemo(
+    () => sensitivityFromCheckIns(checkIns, base.byDay[0]),
+    [checkIns, base],
+  );
+  const forecast = useMemo(
+    () => computeForecast(tagged, DEMO_AS_OF, sensitivity),
+    [tagged, sensitivity],
+  );
+
+  const untagged = useMemo(
+    () =>
+      tagged
+        .filter((w) => forecast.needsTag.includes(w.id))
+        .map((w) => ({ id: w.id, label: describeWorkout(w) })),
+    [tagged, forecast],
+  );
 
   const mapWidth = Math.min(screenWidth - 48, 260);
   const dayForecast = forecast.byDay[day];
@@ -41,6 +68,9 @@ export default function BodyMapScreen() {
     setSide(next);
     setSelected((cur) => (cur && hasMuscle(next, cur) ? cur : null));
   };
+  const checkIn = (muscle: Muscle, level: CheckInLevel) =>
+    setCheckIns((cur) => ({ ...cur, [muscle]: level }));
+  const tagSession = (id: string, tag: StrengthTag) => setTags((cur) => ({ ...cur, [id]: tag }));
 
   return (
     <View style={styles.root}>
@@ -94,6 +124,7 @@ export default function BodyMapScreen() {
             <Text style={styles.legendText}>predicted soreness</Text>
           </View>
 
+          <TagPrompt sessions={untagged} onTag={tagSession} />
           {forecast.needsTag.length > 0 && (
             <Text style={styles.note}>{needsTagNote(forecast.needsTag.length)}</Text>
           )}
@@ -109,6 +140,15 @@ export default function BodyMapScreen() {
             muscle={selected}
             state={dayForecast[selected]}
             dayText={dayText}
+            checkInEnabled={day === 0}
+            checkIn={checkIns[selected]}
+            checkInMessage={
+              checkIns[selected] === undefined
+                ? undefined
+                : checkInMessage(selected, 1, sensitivity[selected])
+            }
+            onCheckIn={(level) => checkIn(selected, level)}
+            recommendation={recommend(selected, dayForecast[selected].band, checkIns[selected])}
             onClose={() => setSelected(null)}
           />
         )}
