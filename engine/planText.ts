@@ -77,12 +77,13 @@ export const PLAN_DISCLAIMER = 'General training guidance, not medical advice.';
 
 // Guardrail messages
 export const RED_FLAG_MESSAGE =
-  'Sharp or localized pain, swelling, marked weakness, dark urine, numbness, or pain that keeps getting worse are not normal soreness. Stop training and see a clinician before continuing.';
+  'Sharp or localized pain, swelling, marked weakness, dark urine, numbness, or pain that keeps getting worse are not normal soreness. Stop training and see a clinician before continuing. If symptoms are severe or sudden, get urgent medical care.';
 export const UNDER_18_MESSAGE =
   'Training plans here are for adults. Please talk to a clinician or a qualified trainer.';
 export const MEDICAL_CONDITION_MESSAGE =
   'With a medical condition, please talk to a clinician or a qualified trainer before following a plan.';
-export const DECLINE_DAYS =
+export const DECLINE_DAYS = 'Plans cover 3 to 5 training days a week.';
+export const DECLINE_DAYS_TOO_MANY =
   'Plans cover 3 to 5 training days a week. More days leave too little time to recover.';
 export const DECLINE_GOAL =
   'This app plans for building muscle or getting stronger. It does not plan for weight or body-composition goals.';

@@ -114,9 +114,9 @@ export const EXERCISES: readonly Exercise[] = [
   ex('prone-t-raise', 'Prone T raise', 'delt', ['shoulders', 'upperBack'], 'low', 'bodyweight'),
 
   // Vertical pull
+  ex('lat-pulldown', 'Lat pulldown', 'pull-v', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('pull-up', 'Pull-up', 'pull-v', ['upperBack', 'biceps'], 'high', 'gym'),
   ex('chin-up', 'Chin-up', 'pull-v', ['biceps', 'upperBack'], 'high', 'gym'),
-  ex('lat-pulldown', 'Lat pulldown', 'pull-v', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('straight-arm-pulldown', 'Straight-arm pulldown', 'pull-v', ['upperBack'], 'low', 'gym'),
   ex('db-pullover', 'Dumbbell pullover', 'pull-v', ['upperBack', 'chest'], 'moderate', 'dumbbells'),
   ex('prone-y-raise', 'Prone Y raise', 'pull-v', ['upperBack', 'shoulders'], 'low', 'bodyweight'),
@@ -125,7 +125,7 @@ export const EXERCISES: readonly Exercise[] = [
   ex('bb-row', 'Barbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('cable-row', 'Seated cable row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('db-row', 'One-arm dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'dumbbells'),
-  ex('chest-supported-row', 'Chest-supported dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'low', 'dumbbells'),
+  ex('chest-supported-row', 'Chest-supported dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'dumbbells'),
   ex('inverted-row', 'Inverted row (sturdy table or low bar)', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'bodyweight'),
   ex('prone-swimmer', 'Prone swimmer', 'pull-h', ['upperBack', 'shoulders'], 'low', 'bodyweight'),
 
