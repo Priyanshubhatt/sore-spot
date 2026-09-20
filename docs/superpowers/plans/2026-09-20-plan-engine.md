@@ -671,7 +671,7 @@ EOF
 - Consumes: `Muscle`, `StrengthTag`, `MUSCLES` from `engine/types.ts`.
 - Produces (used by Tasks 3 and 4):
   - `engine/exercises.ts`: `Equipment` (`'bodyweight'|'dumbbells'|'gym'`), `Goal` (`'muscle'|'strength'`), `Eccentric` (`'low'|'moderate'|'high'`), `Pattern` (12 patterns), `Exercise` (`{ id, name, pattern, primary: Muscle[], eccentric, equipment, hold? }`), `EXERCISES: readonly Exercise[]` (78), `tierOf(equipment): number`, `fitsEquipment(exercise, have): boolean`.
-  - `engine/planText.ts`: `MUSCLE_NAMES`, `listMuscles`, `FOCUS_TITLES`, `REST_TITLE`, `EASY_TITLE`, `REST_WHY`, `GOAL_WHY`, `EFFORT_NORMAL`, `EFFORT_HOLD`, `EFFORT_EASY`, `NOVEL_NOTE`, `fewerSetsNote`, `easierPickNote`, `swapWhy`, `easyDaySoreWhy`, `EASY_RECOVERY_WHY`, `LIGHTER_WEEK_WHY`, `LIGHTER_WEEK_NOTE`, `rampNote`, `PLAN_DISCLAIMER`, and the guardrail messages `RED_FLAG_MESSAGE`, `UNDER_18_MESSAGE`, `MEDICAL_CONDITION_MESSAGE`, `DECLINE_DAYS`, `DECLINE_GOAL`, `DECLINE_EQUIPMENT`.
+  - `engine/planText.ts`: `MUSCLE_NAMES`, `listMuscles`, `FOCUS_TITLES`, `REST_TITLE`, `EASY_TITLE`, `REST_WHY`, `GOAL_WHY`, `EFFORT_NORMAL`, `EFFORT_HOLD`, `EFFORT_EASY`, `NOVEL_NOTE`, `fewerSetsNote`, `easierPickNote`, `swapWhy`, `easyDaySoreWhy`, `EASY_RECOVERY_WHY`, `LIGHTER_WEEK_WHY`, `LIGHTER_WEEK_NOTE`, `rampNote`, `PLAN_DISCLAIMER`, and the guardrail messages `RED_FLAG_MESSAGE`, `UNDER_18_MESSAGE`, `MEDICAL_CONDITION_MESSAGE`, `DECLINE_DAYS` (for fewer than 3 days or a part-day), `DECLINE_DAYS_TOO_MANY` (for more than 5, with the recovery reason), `DECLINE_GOAL`, `DECLINE_EQUIPMENT`.
 
 The eccentric tags and the order of preference inside each pattern are hand-assigned (the file says so). Three gentle exercises (`pike-hold`, `prone-swimmer`, `incline-close-grip-push-up`) exist so that a sore member always has a low-eccentric option; the library test enforces that. The plan text is scanned for banned words in Task 4.
 
@@ -903,9 +903,9 @@ export const EXERCISES: readonly Exercise[] = [
   ex('prone-t-raise', 'Prone T raise', 'delt', ['shoulders', 'upperBack'], 'low', 'bodyweight'),
 
   // Vertical pull
+  ex('lat-pulldown', 'Lat pulldown', 'pull-v', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('pull-up', 'Pull-up', 'pull-v', ['upperBack', 'biceps'], 'high', 'gym'),
   ex('chin-up', 'Chin-up', 'pull-v', ['biceps', 'upperBack'], 'high', 'gym'),
-  ex('lat-pulldown', 'Lat pulldown', 'pull-v', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('straight-arm-pulldown', 'Straight-arm pulldown', 'pull-v', ['upperBack'], 'low', 'gym'),
   ex('db-pullover', 'Dumbbell pullover', 'pull-v', ['upperBack', 'chest'], 'moderate', 'dumbbells'),
   ex('prone-y-raise', 'Prone Y raise', 'pull-v', ['upperBack', 'shoulders'], 'low', 'bodyweight'),
@@ -914,7 +914,7 @@ export const EXERCISES: readonly Exercise[] = [
   ex('bb-row', 'Barbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('cable-row', 'Seated cable row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'gym'),
   ex('db-row', 'One-arm dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'dumbbells'),
-  ex('chest-supported-row', 'Chest-supported dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'low', 'dumbbells'),
+  ex('chest-supported-row', 'Chest-supported dumbbell row', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'dumbbells'),
   ex('inverted-row', 'Inverted row (sturdy table or low bar)', 'pull-h', ['upperBack', 'biceps'], 'moderate', 'bodyweight'),
   ex('prone-swimmer', 'Prone swimmer', 'pull-h', ['upperBack', 'shoulders'], 'low', 'bodyweight'),
 
@@ -1030,12 +1030,13 @@ export const PLAN_DISCLAIMER = 'General training guidance, not medical advice.';
 
 // Guardrail messages
 export const RED_FLAG_MESSAGE =
-  'Sharp or localized pain, swelling, marked weakness, dark urine, numbness, or pain that keeps getting worse are not normal soreness. Stop training and see a clinician before continuing.';
+  'Sharp or localized pain, swelling, marked weakness, dark urine, numbness, or pain that keeps getting worse are not normal soreness. Stop training and see a clinician before continuing. If symptoms are severe or sudden, get urgent medical care.';
 export const UNDER_18_MESSAGE =
   'Training plans here are for adults. Please talk to a clinician or a qualified trainer.';
 export const MEDICAL_CONDITION_MESSAGE =
   'With a medical condition, please talk to a clinician or a qualified trainer before following a plan.';
-export const DECLINE_DAYS =
+export const DECLINE_DAYS = 'Plans cover 3 to 5 training days a week.';
+export const DECLINE_DAYS_TOO_MANY =
   'Plans cover 3 to 5 training days a week. More days leave too little time to recover.';
 export const DECLINE_GOAL =
   'This app plans for building muscle or getting stronger. It does not plan for weight or body-composition goals.';
@@ -1814,6 +1815,7 @@ import {
 } from './guardrails';
 import {
   DECLINE_DAYS,
+  DECLINE_DAYS_TOO_MANY,
   DECLINE_EQUIPMENT,
   DECLINE_GOAL,
   MEDICAL_CONDITION_MESSAGE,
@@ -1852,6 +1854,7 @@ describe('red-flag screen', () => {
       expect(result, f).toEqual({ kind: 'blocked', reason: 'red-flag', message: RED_FLAG_MESSAGE });
     }
     expect(RED_FLAG_MESSAGE).toMatch(/see a clinician/);
+    expect(RED_FLAG_MESSAGE).toMatch(/urgent medical care/);
     expect(RED_FLAG_MESSAGE).toMatch(/not normal soreness/);
   });
 });
@@ -1876,13 +1879,20 @@ describe('request validation', () => {
     expect(r).toEqual({ ok: true, request: { goal: 'strength', daysPerWeek: 5, equipment: 'dumbbells' } });
   });
 
-  it('declines more or fewer days, and anything that is not a whole number of days', () => {
-    for (const days of [6, 7, 2, 0, 3.5, NaN]) {
+  it('declines more than 5 days with the reason, and fewer than 3 or a part-day without a wrong reason', () => {
+    for (const days of [6, 7]) {
+      expect(validateRequest({ goal: 'muscle', daysPerWeek: days, equipment: 'gym' }), String(days)).toEqual({
+        ok: false,
+        message: DECLINE_DAYS_TOO_MANY,
+      });
+    }
+    for (const days of [2, 0, 3.5, NaN]) {
       expect(validateRequest({ goal: 'muscle', daysPerWeek: days, equipment: 'gym' }), String(days)).toEqual({
         ok: false,
         message: DECLINE_DAYS,
       });
     }
+    expect(DECLINE_DAYS).not.toMatch(/too little time/);
   });
 
   it('declines weight and body-composition goals', () => {
@@ -2020,6 +2030,7 @@ import type { Equipment, Goal } from './exercises';
 import { buildPlan, type Plan, type PlanContext, type PlanRequest } from './plan';
 import {
   DECLINE_DAYS,
+  DECLINE_DAYS_TOO_MANY,
   DECLINE_EQUIPMENT,
   DECLINE_GOAL,
   MEDICAL_CONDITION_MESSAGE,
@@ -2093,7 +2104,7 @@ export function validateRequest(
 ): { ok: true; request: PlanRequest } | { ok: false; message: string } {
   if (!GOALS.includes(raw.goal as Goal)) return { ok: false, message: DECLINE_GOAL };
   if (!Number.isInteger(raw.daysPerWeek) || raw.daysPerWeek < 3 || raw.daysPerWeek > 5) {
-    return { ok: false, message: DECLINE_DAYS };
+    return { ok: false, message: raw.daysPerWeek > 5 ? DECLINE_DAYS_TOO_MANY : DECLINE_DAYS };
   }
   if (!EQUIPMENT.includes(raw.equipment as Equipment)) {
     return { ok: false, message: DECLINE_EQUIPMENT };
