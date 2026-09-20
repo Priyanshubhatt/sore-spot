@@ -72,3 +72,13 @@ Non-test verification, in order: `npm run typecheck`; `npm test`; `npx expo expo
 ## Definition of done
 
 Typecheck clean, all tests pass, web export builds, and the user confirms on the phone that the map shows the expected pattern: at Now, the legs (quads, glutes, hamstrings, calves) are already colored from the recent sessions; adductors turn moderate from day 1 (the soccer match); upper-body zones stay low; dragging to +7d fades the legs; tapping quads opens the sheet with "novel" and "eccentric" reasons.
+
+## Amendments (2026-09-19, found while building)
+
+These change the spec above; where they conflict, this section wins.
+
+- **Sheet:** no backdrop. It closes with its Close button or by tapping the selected zone again, and it follows the scrubber, so dragging with the sheet open shows how that muscle fades. This keeps the scrubber usable while the sheet is open.
+- **Layout order:** title, synthetic banner, forecast time, Front/Back toggle, scrubber, map, legend, notes. The sheet overlays the bottom of the screen.
+- **Scrubber on web:** the track sets `userSelect: 'none'`, because otherwise a mouse drag starts a text selection and react-native-web cancels the pan. Cells use `pointerEvents="none"` so `locationX` is relative to the track.
+- **Extra pure helpers:** `mirrorPath` builds each right-side zone from its left-side path; `musclesInView` lists a view's zones; `BAND_ORDER` orders the legend.
+- **Tests:** 26 new (copy 8, scrubber 7, colors 4, zones 7). The suite is 74 tests in 12 files.
