@@ -36,6 +36,17 @@ describe('mobility library', () => {
     for (const m of MOVES) expect(['ROM', 'COMFORT']).toContain(evidenceFor(m.kind));
   });
 
+  it('gives boundaries and cues where a joint or the front of the shoulder is loaded', () => {
+    const how = (id: string) => MOVES.find((m) => m.id === id)?.how ?? '';
+    expect(how('hamstrings-foam-roll')).toMatch(/above the back of the knee/);
+    expect(how('quads-foam-roll')).toMatch(/above the knee/);
+    expect(how('calves-foam-roll')).toMatch(/below the knee/);
+    expect(how('upper-back-foam-roll')).toMatch(/support your head/);
+    expect(how('upper-back-foam-roll')).toMatch(/avoiding the lower back/);
+    expect(how('chest-doorway-stretch')).toMatch(/pinch/);
+    expect(how('biceps-wall-stretch')).toMatch(/pinch/);
+  });
+
   it('keeps holds moderate and never asks for pain', () => {
     for (const m of MOVES) {
       expect(m.how, m.id).not.toMatch(/until it hurts|push through|as far as possible|maximum/i);

@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { Muscle, MuscleState } from '../../engine';
-import { BAND_LABELS, MUSCLE_LABELS, bandPhrase, reasonsFor } from '../copy';
+import { BAND_LABELS, MUSCLE_LABELS, SAFETY_LINE, bandPhrase, reasonsFor } from '../copy';
 import { bandColor } from '../body/colors';
 import type { CheckInLevel } from '../checkin';
 import type { Recommendation } from '../mobility/recommend';
@@ -55,6 +55,7 @@ export default function MuscleSheet({
           <Text style={styles.close}>Close</Text>
         </Pressable>
       </View>
+      <Text style={styles.safety}>{SAFETY_LINE}</Text>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {reasonsFor(state).map((reason) => (
           <Text key={reason} style={styles.reason}>
@@ -102,4 +103,5 @@ const styles = StyleSheet.create({
   scrollContent: { gap: 12, paddingBottom: 4 },
   reason: { fontSize: 14, color: '#26312F' },
   band: { fontSize: 12, color: '#5C6866' },
+  safety: { fontSize: 12, fontWeight: '600', color: '#7A3B00' },
 });

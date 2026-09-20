@@ -14,7 +14,7 @@ import {
   BAND_LABELS,
   DISCLAIMER,
   SYNTHETIC_BANNER,
-  checkInMessage,
+  checkInFeedback,
   needsTagNote,
   unmappedNote,
 } from './copy';
@@ -61,6 +61,7 @@ export default function BodyMapScreen() {
   const mapWidth = Math.min(screenWidth - 48, 260);
   const dayForecast = forecast.byDay[day];
   const dayText = `${dayLabel(day)} (${weekdayLabel(DEMO_AS_OF, day)})`;
+  const selectedCheckIn = selected ? checkIns[selected] : undefined;
 
   const select = (muscle: Muscle) => setSelected((cur) => (cur === muscle ? null : muscle));
   // Keep the open sheet only if its muscle is drawn in the view we are switching to.
@@ -141,14 +142,19 @@ export default function BodyMapScreen() {
             state={dayForecast[selected]}
             dayText={dayText}
             checkInEnabled={day === 0}
-            checkIn={checkIns[selected]}
+            checkIn={selectedCheckIn}
             checkInMessage={
-              checkIns[selected] === undefined
+              selectedCheckIn === undefined
                 ? undefined
-                : checkInMessage(selected, 1, sensitivity[selected])
+                : checkInFeedback(selected, selectedCheckIn, 1, sensitivity[selected])
             }
             onCheckIn={(level) => checkIn(selected, level)}
-            recommendation={recommend(selected, dayForecast[selected].band, checkIns[selected])}
+            // A check-in describes today, so it only shapes the advice on Now.
+            recommendation={recommend(
+              selected,
+              dayForecast[selected].band,
+              day === 0 ? selectedCheckIn : undefined,
+            )}
             onClose={() => setSelected(null)}
           />
         )}

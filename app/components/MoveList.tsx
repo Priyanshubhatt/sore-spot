@@ -4,8 +4,8 @@ import {
   EVIDENCE_LABELS,
   EVIDENCE_NOTES,
   NOTHING_NEEDED_TEXT,
+  MOVE_CUE,
   ROM_HEADING,
-  SAFETY_LINE,
   SAVE_STRETCHING_TEXT,
   STRETCH_HONESTY,
 } from '../copy';
@@ -45,8 +45,8 @@ export default function MoveList({ recommendation }: { recommendation: Recommend
       {comfort.length > 0 && <Section heading={COMFORT_HEADING} evidence="COMFORT" moves={comfort} />}
       {note === 'save-stretching' && <Text style={styles.note}>{SAVE_STRETCHING_TEXT}</Text>}
       {rom.length > 0 && <Section heading={ROM_HEADING} evidence="ROM" moves={rom} />}
+      {(comfort.length > 0 || rom.length > 0) && <Text style={styles.small}>{MOVE_CUE}</Text>}
       <Text style={styles.small}>{STRETCH_HONESTY}</Text>
-      <Text style={styles.safety}>{SAFETY_LINE}</Text>
     </View>
   );
 }
@@ -73,5 +73,4 @@ const styles = StyleSheet.create({
   dose: { fontSize: 12, color: '#5C6866' },
   note: { fontSize: 13, color: '#26312F' },
   small: { fontSize: 12, color: '#5C6866' },
-  safety: { fontSize: 12, fontWeight: '600', color: '#7A3B00' },
 });

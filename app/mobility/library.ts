@@ -64,7 +64,7 @@ export const MOVES: readonly Move[] = [
     name: 'Doorway chest stretch',
     kind: 'stretch',
     muscles: ['chest'],
-    how: 'Rest a forearm on a door frame with the elbow at shoulder height. Step through until you feel a mild stretch.',
+    how: 'Rest a forearm on a door frame with the elbow at shoulder height. Step through until you feel a mild stretch. Ease off if you feel a pinch at the front of the shoulder.',
     dose: `${HOLD} per side`,
   },
 
@@ -116,7 +116,7 @@ export const MOVES: readonly Move[] = [
     name: 'Wall biceps stretch',
     kind: 'stretch',
     muscles: ['biceps'],
-    how: 'Place your palm on a wall behind you with the fingers pointing back, then turn your body gently away.',
+    how: 'Place your palm on a wall behind you with the fingers pointing back, then turn your body gently away. Ease off if you feel a pinch at the front of the shoulder.',
     dose: `${HOLD} per arm`,
   },
 
@@ -178,7 +178,7 @@ export const MOVES: readonly Move[] = [
     name: 'Foam roll upper back',
     kind: 'self-massage',
     muscles: ['upperBack'],
-    how: 'Lie with a foam roller under your upper back and hips lifted. Roll slowly, keep your neck relaxed and avoid the lower back.',
+    how: 'Lie with a foam roller under your upper back and support your head with your hands. Lift your hips and roll slowly, keeping your neck relaxed and avoiding the lower back.',
     dose: '1 to 2 minutes',
   },
   {
@@ -274,7 +274,7 @@ export const MOVES: readonly Move[] = [
     name: 'Foam roll hamstrings',
     kind: 'self-massage',
     muscles: ['hamstrings'],
-    how: 'Sit with a foam roller under the backs of your thighs and roll slowly, supporting your weight with your hands.',
+    how: 'Sit with a foam roller under the backs of your thighs. Roll slowly from just below the sit bone to above the back of the knee, supporting your weight with your hands.',
     dose: '1 to 2 minutes per leg',
   },
   {

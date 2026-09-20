@@ -20,6 +20,20 @@ const files = sourceFiles(__dirname).map((f) => ({
   text: readFileSync(f, 'utf8'),
 }));
 
+const text = (rel: string) => files.find((f) => f.rel === rel)?.text ?? '';
+
+describe('required lines stay wired into the sheet', () => {
+  it('shows the clinician safety line in the sheet itself, outside the scrolling move list', () => {
+    expect(text('components/MuscleSheet.tsx')).toMatch(/{SAFETY_LINE}/);
+    expect(text('components/MoveList.tsx')).not.toMatch(/SAFETY_LINE/);
+  });
+
+  it('shows the stretching honesty line and the ease-off cue in the move list', () => {
+    expect(text('components/MoveList.tsx')).toMatch(/{STRETCH_HONESTY}/);
+    expect(text('components/MoveList.tsx')).toMatch(/{MOVE_CUE}/);
+  });
+});
+
 describe('honesty scan over the app source', () => {
   it('found the app source files', () => {
     expect(files.length).toBeGreaterThanOrEqual(12);

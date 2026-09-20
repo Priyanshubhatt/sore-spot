@@ -5,12 +5,14 @@ import {
   CHECKIN_LABELS,
   CHECKIN_NOT_TODAY,
   CHECKIN_PROMPT,
+  CHECKIN_SEVERE_ACK,
   COMFORT_HEADING,
   DISCLAIMER,
   DRIVER_TEXT,
   EVIDENCE_LABELS,
   EVIDENCE_NOTES,
   GENERIC_REASON_TEXT,
+  MOVE_CUE,
   MUSCLE_LABELS,
   NOTHING_NEEDED_TEXT,
   NO_SORENESS_TEXT,
@@ -23,6 +25,7 @@ import {
   TAG_LABELS,
   TAG_PROMPT,
   bandPhrase,
+  checkInFeedback,
   checkInMessage,
   needsTagNote,
   reasonsFor,
@@ -35,6 +38,8 @@ const BANDS: RiskBand[] = ['low', 'moderate', 'high'];
 const NEW_STRINGS = [
   CHECKIN_PROMPT,
   CHECKIN_NOT_TODAY,
+  CHECKIN_SEVERE_ACK,
+  MOVE_CUE,
   ...Object.values(CHECKIN_LABELS),
   checkInMessage('quads', 1, 1.1),
   checkInMessage('quads', 1, 0.9),
@@ -104,6 +109,23 @@ describe('check-in and evidence copy', () => {
     expect(checkInMessage('quads', 1, 1.1)).toBe('Noted. Predictions for quads will lean a little higher.');
     expect(checkInMessage('quads', 1, 0.9)).toBe('Noted. Predictions for quads will lean a little lower.');
     expect(checkInMessage('upperBack', 1, 1)).toBe('Noted. Predictions for upper back will stay about the same.');
+  });
+
+  it('acknowledges a severe check-in and points at the clinician line, without giving advice', () => {
+    const severe = checkInFeedback('quads', 3, 1, 1);
+    expect(severe).toContain(CHECKIN_SEVERE_ACK);
+    expect(severe).toContain('Noted. Predictions for quads will stay about the same.');
+    expect(CHECKIN_SEVERE_ACK).toMatch(/see a clinician/);
+  });
+
+  it('uses the plain message for every other check-in level', () => {
+    for (const level of [0, 1, 2] as const) {
+      expect(checkInFeedback('quads', level, 1, 0.9)).toBe(checkInMessage('quads', 1, 0.9));
+    }
+  });
+
+  it('gives one short cue to ease off if a move hurts or pinches', () => {
+    expect(MOVE_CUE).toBe('Ease off if a move hurts or pinches.');
   });
 
   it('never claims stretching reduces soreness', () => {

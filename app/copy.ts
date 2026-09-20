@@ -83,6 +83,21 @@ export function checkInMessage(muscle: Muscle, before: number, after: number): s
   return `Noted. Predictions for ${name} will stay about the same.`;
 }
 
+/** Acknowledges a severe report and points at the clinician line, without giving advice. */
+export const CHECKIN_SEVERE_ACK =
+  'Thanks for telling us. Severe soreness is worth taking seriously. If it is sharp, swollen or numb, stop and see a clinician.';
+
+/** The words shown after a check-in: what it did to the prediction, with an acknowledgement for Severe. */
+export function checkInFeedback(
+  muscle: Muscle,
+  level: CheckInLevel,
+  before: number,
+  after: number,
+): string {
+  const message = checkInMessage(muscle, before, after);
+  return level === 3 ? `${CHECKIN_SEVERE_ACK} ${message}` : message;
+}
+
 // Comfort and mobility ideas
 export const EVIDENCE_LABELS: Record<EvidenceTag, string> = {
   ROM: 'Range of motion',
@@ -92,6 +107,7 @@ export const EVIDENCE_NOTES: Record<EvidenceTag, string> = {
   ROM: 'Done regularly, stretching improves range of motion. It has not been shown to reduce soreness.',
   COMFORT: 'Some people find this eases stiffness. Evidence is mixed.',
 };
+export const MOVE_CUE = 'Ease off if a move hurts or pinches.';
 export const COMFORT_HEADING = 'Comfort ideas';
 export const ROM_HEADING = 'For range of motion (regular practice, not a soreness fix)';
 export const NOTHING_NEEDED_TEXT = 'Nothing needed for this muscle right now.';
