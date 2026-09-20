@@ -82,3 +82,9 @@ These change the spec above; where they conflict, this section wins.
 - **Scrubber on web:** the track sets `userSelect: 'none'`, because otherwise a mouse drag starts a text selection and react-native-web cancels the pan. Cells use `pointerEvents="none"` so `locationX` is relative to the track.
 - **Extra pure helpers:** `mirrorPath` builds each right-side zone from its left-side path; `musclesInView` lists a view's zones; `BAND_ORDER` orders the legend.
 - **Tests:** 26 new (copy 8, scrubber 7, colors 4, zones 7). The suite is 74 tests in 12 files.
+- **Fixed header and footer (from the final review):** the title and the SYNTHETIC DATA banner sit in a fixed header, and the disclaimer in a fixed footer, both outside the ScrollView, so both stay visible at every scroll position on phone-sized screens (checked at 390x844 and 375x667). The sheet is anchored above the footer.
+- **Unmapped sports:** the screen also shows a note when `forecast.unmappedSports` is not empty (`unmappedNote` in `copy.ts`), so sports the engine cannot map are reported instead of silently dropped.
+- **Front/Back and the sheet:** switching views closes the sheet unless its muscle is drawn in the new view (`hasMuscle` in `zones.ts`).
+- **Close button:** `hitSlop` of 12 for a larger touch target.
+- **Deferred:** VoiceOver support for zones and the scrubber (adding an `accessible` prop makes react-native-web render zones as HTML buttons, which hides them, so it needs a device test); PanResponder hardening against the parent ScrollView on iOS, pending the phone check; safe-area insets; and on very small screens the open sheet can cover the selected zone.
+- **Tests:** 4 more (hasMuscle 3, unmappedNote 1). The suite is 78 tests in 12 files.

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { MUSCLES } from '../../engine';
-import { SILHOUETTE, VIEWBOX, ZONES, mirrorPath, musclesInView, type BodySide } from './zones';
+import {
+  SILHOUETTE,
+  VIEWBOX,
+  ZONES,
+  hasMuscle,
+  mirrorPath,
+  musclesInView,
+  type BodySide,
+} from './zones';
 
 const SIDES: BodySide[] = ['front', 'back'];
 
@@ -13,6 +21,26 @@ describe('mirrorPath', () => {
     const d = 'M 44 78.5 Q 44 64 58 64 Q 72 66 74 82 Z';
     expect(mirrorPath(d)).toBe('M 156 78.5 Q 156 64 142 64 Q 128 66 126 82 Z');
     expect(mirrorPath(mirrorPath(d))).toBe(d);
+  });
+});
+
+describe('hasMuscle', () => {
+  it('tells which muscles are drawn in which view', () => {
+    expect(hasMuscle('front', 'quads')).toBe(true);
+    expect(hasMuscle('back', 'quads')).toBe(false);
+    expect(hasMuscle('back', 'glutes')).toBe(true);
+    expect(hasMuscle('front', 'glutes')).toBe(false);
+  });
+
+  it('is true for muscles drawn in both views, such as calves', () => {
+    expect(hasMuscle('front', 'calves')).toBe(true);
+    expect(hasMuscle('back', 'calves')).toBe(true);
+  });
+
+  it('agrees with musclesInView for every muscle and view', () => {
+    for (const s of SIDES) {
+      for (const m of MUSCLES) expect(hasMuscle(s, m), `${s}/${m}`).toBe(musclesInView(s).includes(m));
+    }
   });
 });
 

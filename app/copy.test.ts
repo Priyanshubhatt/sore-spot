@@ -11,6 +11,7 @@ import {
   bandPhrase,
   needsTagNote,
   reasonsFor,
+  unmappedNote,
   zoneA11yLabel,
 } from './copy';
 
@@ -52,6 +53,15 @@ describe('phrases', () => {
     expect(needsTagNote(1)).toBe('1 strength session has no muscle tag, so it is not counted.');
     expect(needsTagNote(3)).toBe('3 strength sessions have no muscle tag, so they are not counted.');
   });
+
+  it('names sports the engine cannot map, singular and plural', () => {
+    expect(unmappedNote(['curling'])).toBe(
+      '1 sport is not mapped to muscles yet, so it is not counted: curling.',
+    );
+    expect(unmappedNote(['curling', 'darts'])).toBe(
+      '2 sports are not mapped to muscles yet, so they are not counted: curling, darts.',
+    );
+  });
 });
 
 describe('honesty rule', () => {
@@ -67,6 +77,8 @@ describe('honesty rule', () => {
       SYNTHETIC_BANNER,
       needsTagNote(1),
       needsTagNote(2),
+      unmappedNote(['curling']),
+      unmappedNote(['curling', 'darts']),
       ...BANDS.map(bandPhrase),
       ...MUSCLES.flatMap((m) => BANDS.map((b) => zoneA11yLabel(m, b))),
     ];

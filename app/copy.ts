@@ -52,6 +52,12 @@ export function reasonsFor(state: MuscleState): string[] {
   return state.drivers.map((d) => DRIVER_TEXT[d]);
 }
 
+/** Sports the engine has no muscle map for. They add no soreness, so say so instead of hiding them. */
+export function unmappedNote(sports: string[]): string {
+  const one = sports.length === 1;
+  return `${sports.length} sport${one ? ' is' : 's are'} not mapped to muscles yet, so ${one ? 'it is' : 'they are'} not counted: ${sports.join(', ')}.`;
+}
+
 export function needsTagNote(count: number): string {
   const one = count === 1;
   return `${count} strength session${one ? ' has' : 's have'} no muscle tag, so ${one ? 'it is' : 'they are'} not counted.`;

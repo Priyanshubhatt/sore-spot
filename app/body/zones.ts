@@ -75,3 +75,8 @@ export const ZONES: Record<BodySide, Partial<Record<Muscle, string[]>>> = {
 export function musclesInView(side: BodySide): Muscle[] {
   return Object.keys(ZONES[side]) as Muscle[];
 }
+
+/** Whether a muscle has a zone drawn in this view. */
+export function hasMuscle(side: BodySide, muscle: Muscle): boolean {
+  return Object.prototype.hasOwnProperty.call(ZONES[side], muscle);
+}

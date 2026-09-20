@@ -23,7 +23,12 @@ export default function MuscleSheet({ muscle, state, dayText, onClose }: Props) 
             {bandPhrase(state.band)} · {dayText}
           </Text>
         </View>
-        <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close details">
+        <Pressable
+          onPress={onClose}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Close details"
+        >
           <Text style={styles.close}>Close</Text>
         </Pressable>
       </View>
