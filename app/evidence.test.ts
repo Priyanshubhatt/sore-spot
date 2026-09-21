@@ -84,7 +84,7 @@ describe('evidence copy', () => {
   it('never says stretching reduces or relieves soreness, and says it does not', () => {
     const stretching = TEXT_CARDS.find((c) => c.id === 'stretching')!;
     expect(stretching.heading).toMatch(/not a soreness fix/i);
-    expect(stretching.body).toMatch(/no meaningful effect on soreness/);
+    expect(stretching.body).toMatch(/no meaningful effect of stretching on soreness/);
     expect(stretching.body).toMatch(/hasn't been shown to reduce soreness/);
     for (const c of TEXT_CARDS) expect(c.body, c.id).not.toMatch(/(stretch\w*) (reduces|relieves|cures|eases) soreness/i);
   });

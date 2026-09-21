@@ -114,8 +114,23 @@ describe('the evidence tab and the accessibility state stay wired', () => {
     expect(screen).toMatch(/<TimeCurveChart /);
   });
 
+  it('gives every single-choice group and checkbox its role and its checked state', () => {
+    const count = (rel: string, re: RegExp) => (text(rel).match(re) ?? []).length;
+    for (const rel of ['components/ChipRow.tsx', 'components/CheckInPicker.tsx', 'BodyMapScreen.tsx']) {
+      expect(count(rel, /accessibilityRole="radiogroup"/g), rel).toBe(1);
+      expect(count(rel, /accessibilityRole="radio"/g), rel).toBe(1);
+    }
+    expect(text('components/CheckInPicker.tsx')).toMatch(/aria-checked={level === l}/);
+    expect(text('BodyMapScreen.tsx')).toMatch(/aria-checked={side === s}/);
+    const health = 'components/HealthQuestions.tsx';
+    expect(count(health, /accessibilityRole="radiogroup"/g)).toBe(1);
+    expect(count(health, /accessibilityRole="radio"/g)).toBe(1);
+    expect(count(health, /accessibilityRole="checkbox"/g)).toBe(2); // the six flags and "None of these apply"
+    expect(text(health)).toMatch(/aria-checked={on}/);
+  });
+
   it('reports selected and checked with aria props, because react-native-web ignores accessibilityState for them', () => {
-    for (const f of files) expect(f.text, f.rel).not.toMatch(/accessibilityState=\{\{\s*(selected|checked)/);
+    for (const f of files) expect(f.text, f.rel).not.toMatch(/accessibilityState=\{\{[^}]*\b(selected|checked)\b/);
     expect(text('components/TabBar.tsx')).toMatch(/aria-selected={tab === t}/);
     expect(text('components/TabBar.tsx')).toMatch(/accessibilityRole="tab"/);
     expect(text('components/ChipRow.tsx')).toMatch(/aria-checked={on}/);

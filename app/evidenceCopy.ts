@@ -31,12 +31,12 @@ export const TEXT_CARDS: TextCard[] = [
   {
     id: 'eccentric',
     heading: 'Lowering and braking work',
-    body: 'Lengthening work, such as running downhill, slowing down or lowering a weight, causes far more soreness than lifting or pushing. The model weights it higher, and the plan keeps heavy lengthening work off muscles predicted to be sore.',
+    body: 'Lengthening work, such as running downhill, slowing down or lowering a weight, causes more soreness than lifting or pushing. The model weights it higher, and the plan keeps heavy lengthening work off muscles predicted to be sore.',
   },
   {
     id: 'stretching',
     heading: 'Stretching is not a soreness fix',
-    body: `Reviews of stretching before and after exercise (Herbert and colleagues, 2011; Dupuy and colleagues, 2018) found no meaningful effect on soreness. ${STRETCH_HONESTY} So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
+    body: `A review of stretching before and after exercise (Herbert and colleagues, 2011) and a wider review of recovery methods (Dupuy and colleagues, 2018) found no meaningful effect of stretching on soreness. ${STRETCH_HONESTY} So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
   },
   {
     id: 'easing-in',
