@@ -28,7 +28,7 @@ Every task's requirements include these, copied from the spec:
 
 **Line endings:** this repo's working tree has Windows line endings. For every file below marked "replace whole file", overwrite the entire file with the block shown using the file-writing tool. Do not use search-and-replace edits: multi-line matches silently fail on Windows line endings.
 
-**How these files were produced:** every block was first run in a scratch copy: 288 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and the existing 210-check headless-browser drive at 390x844 and 375x667 passing on the restyled app (214 checks with two added for the icons and the chart width). Twenty-two guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
+**How these files were produced:** every block was first run in a scratch copy: 290 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and the existing 210-check headless-browser drive at 390x844 and 375x667 passing on the restyled app (214 checks with two added for the icons and the chart width). Twenty-nine guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
 
 ## File Structure
 
@@ -71,6 +71,8 @@ You are on branch `feat/ui-restyle` (created by the controller). Confirm with `g
 Create `app/theme.test.ts`:
 
 ```ts
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from './contrast';
 import { colors, radius, space, type } from './theme';
@@ -91,6 +93,15 @@ describe('contrast helper', () => {
 
   it('is symmetric', () => {
     expect(contrastRatio('#123456', '#ABCDEF')).toBeCloseTo(contrastRatio('#ABCDEF', '#123456'), 10);
+  });
+});
+
+describe('the app config', () => {
+  it('paints the root and the web page in the theme background, so a dark app never flashes white', () => {
+    const config = JSON.parse(readFileSync(join(__dirname, '..', 'app.json'), 'utf8')).expo;
+    expect(config.userInterfaceStyle).toBe('dark');
+    expect(config.backgroundColor).toBe(colors.bg);
+    expect(config.web.backgroundColor).toBe(colors.bg);
   });
 });
 
@@ -195,7 +206,7 @@ import { syntheticReplay } from '../data/replay.synthetic';
 import { MUSCLES, type DayForecast, type RiskBand } from '../engine';
 import { DEMO_AS_OF } from './config';
 import { buildForecastState } from './forecastState';
-import { summarize, summaryLabel } from './summary';
+import { SUMMARY_CAPTION, summarize, summaryLabel } from './summary';
 
 const day = (bands: Partial<Record<string, RiskBand>>): DayForecast =>
   Object.fromEntries(MUSCLES.map((m) => [m, { band: bands[m] ?? 'low', drivers: [] }])) as unknown as DayForecast;
@@ -232,9 +243,12 @@ describe('summarize', () => {
 describe('summaryLabel', () => {
   it('reads each count with its band name and pluralizes correctly', () => {
     expect(summaryLabel(summarize(day({ quads: 'high', glutes: 'high', calves: 'moderate' })), 'Now')).toBe(
-      'Now: 2 muscles High, 1 muscle Moderate, 9 muscles Low.',
+      'Predicted soreness, Now: 2 muscles High, 1 muscle Moderate, 9 muscles Low.',
     );
-    expect(summaryLabel(summarize(day({})), '+6d (Fri)')).toBe('+6d (Fri): 0 muscles High, 0 muscles Moderate, 12 muscles Low.');
+    expect(summaryLabel(summarize(day({})), '+6d (Fri)')).toBe(
+      'Predicted soreness, +6d (Fri): 0 muscles High, 0 muscles Moderate, 12 muscles Low.',
+    );
+    expect(SUMMARY_CAPTION).toBe('Predicted soreness');
   });
 });
 ```
@@ -297,7 +311,8 @@ import type { TextStyle } from 'react-native';
 /**
  * The one place the look is defined: a dark, high-contrast theme in the spirit of modern fitness
  * apps. It borrows no brand assets: no logo, wordmark or typeface. Screens use these tokens, not
- * hex codes, and app/theme.test.ts checks the contrast of every pairing that carries text.
+ * hex code; app/theme.test.ts checks the contrast of every pairing that carries text. app.json repeats
+ * `bg` as the root and web background (JSON cannot import it), and a test keeps the two in step.
  */
 export const colors = {
   bg: '#0A0B0D',
@@ -365,11 +380,14 @@ export function summarize(day: DayForecast): DaySummary {
   };
 }
 
+/** What the strip counts. Without it, "4 High" could be taken for a recovery or health score. */
+export const SUMMARY_CAPTION = 'Predicted soreness';
+
 const plural = (n: number) => `${n} ${n === 1 ? 'muscle' : 'muscles'}`;
 
-/** The strip read aloud: "Now: 4 muscles High, 1 muscle Moderate, 7 muscles Low." */
+/** The strip read aloud: "Predicted soreness, Now: 4 muscles High, 1 muscle Moderate, 7 muscles Low." */
 export function summaryLabel(summary: DaySummary, dayText: string): string {
-  return `${dayText}: ${plural(summary.high.length)} ${BAND_LABELS.high}, ${plural(summary.moderate.length)} ${BAND_LABELS.moderate}, ${plural(summary.low.length)} ${BAND_LABELS.low}.`;
+  return `${SUMMARY_CAPTION}, ${dayText}: ${plural(summary.high.length)} ${BAND_LABELS.high}, ${plural(summary.moderate.length)} ${BAND_LABELS.moderate}, ${plural(summary.low.length)} ${BAND_LABELS.low}.`;
 }
 ```
 
@@ -431,7 +449,7 @@ export const WHY_HEADING = 'Why';
 - [ ] **Step 4: Run the whole suite and typecheck**
 
 Run: `npm test && npm run typecheck`
-Expected: 30 test files, 284 tests pass (the 265 existing, minus the 4 old colour tests, plus 16 theme, 4 summary and 3 colour tests); typecheck prints no errors. The screens still use their old hex colours at this point, which is fine.
+Expected: 30 test files, 285 tests pass (the 265 existing, minus the 4 old colour tests, plus 17 theme, 4 summary and 3 colour tests); typecheck prints no errors. The screens still use their old hex colours at this point, which is fine.
 
 - [ ] **Step 5: Prove the guards can fail**
 
@@ -477,7 +495,7 @@ EOF
 - Consumes: everything Task 1 produces; `bandColor`, `BAND_ORDER` from `app/body/colors.ts`; `summarize`, `summaryLabel` from `app/summary.ts`; `BAND_LABELS` from `app/copy.ts`; `INDEPENDENT_LINE` from `app/planCopy.ts`; `react-native-svg` as already used.
 - Produces: `SummaryStrip({ day, dayText })`; `TabIcon({ name, color, size? })` with `IconName = 'body' | 'plan' | 'evidence'`; every other component keeps the props it had.
 
-Each replaced file keeps the props, handlers, `accessibilityRole` / `aria-*` state, labels and copy it had; only styles change (plus the two new components, the strip on the Body map, the independent line in the shell, and the light status bar). `app.json` changes one value: `userInterfaceStyle` is now `"dark"`.
+Each replaced file keeps the props, handlers, `accessibilityRole` / `aria-*` state, labels and copy it had; only styles change (plus the two new components, the strip on the Body map, the independent line in the shell, and the light status bar). `app.json` changes three values: `userInterfaceStyle` is now `"dark"`, and `backgroundColor` and `web.backgroundColor` are the theme background `#0A0B0D` (a test in `app/theme.test.ts` keeps them equal to `colors.bg`, since JSON cannot import it).
 
 - [ ] **Step 1: Write the failing wiring tests**
 
@@ -630,8 +648,13 @@ describe('the look stays on the theme', () => {
     const shell = { rel: '../App.tsx', text: readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8') };
     for (const f of [...files, shell]) {
       if (f.rel === 'theme.ts') continue;
-      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(/);
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(|hsla?\(|['"](white|black|transparent|red|green|blue|gray|grey)['"]/);
     }
+  });
+
+  it('keeps the honesty caveat and the check-in question in sentence case, not in the small uppercase tag style', () => {
+    expect(text('components/MoveList.tsx')).toMatch(/heading: { \.\.\.type\.strong }/);
+    expect(text('components/CheckInPicker.tsx')).toMatch(/prompt: { \.\.\.type\.strong }/);
   });
 
   it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {
@@ -650,6 +673,8 @@ describe('the look stays on the theme', () => {
     expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip day={dayForecast} dayText={dayText} \/>/);
     expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    // The strip names what it counts, so "4 High" cannot be taken for a health or recovery score.
+    expect(text('components/SummaryStrip.tsx')).toMatch(/{SUMMARY_CAPTION}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);
   });
 });
@@ -677,7 +702,7 @@ describe('honesty scan over the app source', () => {
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run app/honesty.test.ts`
-Expected: FAIL. The new "the look stays on the theme" tests fail: the screens still contain hex or rgb colours, the shell has no `{INDEPENDENT_LINE}` and no light status bar, the body map has no summary strip, and there is no tab icon to hide. The older honesty tests still pass. Paste the real output.
+Expected: FAIL. The new "the look stays on the theme" tests fail: the screens still contain hex or rgb colours, the shell has no `{INDEPENDENT_LINE}` and no light status bar, the body map has no summary strip, the caveat and question are still in the small tag style, and there is no tab icon to hide. The older honesty tests still pass. Paste the real output.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -688,7 +713,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { DayForecast, RiskBand } from '../../engine';
 import { bandColor } from '../body/colors';
 import { BAND_LABELS } from '../copy';
-import { summarize, summaryLabel } from '../summary';
+import { SUMMARY_CAPTION, summarize, summaryLabel } from '../summary';
 import { colors, radius, space, type } from '../theme';
 
 const ORDER: readonly RiskBand[] = ['high', 'moderate', 'low'];
@@ -704,21 +729,23 @@ export default function SummaryStrip({ day, dayText }: Props) {
   const summary = summarize(day);
   return (
     <View accessible accessibilityLabel={summaryLabel(summary, dayText)} style={styles.card}>
-      {ORDER.map((band) => (
-        <View key={band} style={styles.stat}>
-          <Text style={styles.number}>{String(summary[band].length)}</Text>
-          <View style={[styles.bar, { backgroundColor: bandColor(band) }]} />
-          <Text style={styles.label}>{BAND_LABELS[band]}</Text>
-        </View>
-      ))}
+      <Text style={styles.caption}>{SUMMARY_CAPTION}</Text>
+      <View style={styles.stats}>
+        {ORDER.map((band) => (
+          <View key={band} style={styles.stat}>
+            <Text style={styles.number}>{String(summary[band].length)}</Text>
+            <View style={[styles.bar, { backgroundColor: bandColor(band) }]} />
+            <Text style={styles.label}>{BAND_LABELS[band]}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    gap: space.md,
+    gap: space.sm,
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
     borderRadius: radius.md,
@@ -726,6 +753,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  caption: { ...type.label, textAlign: 'center' },
+  stats: { flexDirection: 'row', gap: space.md },
   stat: { flex: 1, alignItems: 'center', gap: 6 },
   number: { ...type.display, fontSize: 30, lineHeight: 34 },
   bar: { width: 36, height: 4, borderRadius: 2 },
@@ -1136,7 +1165,7 @@ export default function MoveList({ recommendation }: { recommendation: Recommend
 const styles = StyleSheet.create({
   wrap: { gap: space.md },
   section: { gap: 6 },
-  heading: { ...type.label, color: colors.dim },
+  heading: { ...type.strong },
   evidenceNote: { ...type.small },
   move: { gap: 2, paddingVertical: space.xs },
   moveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
@@ -1203,7 +1232,7 @@ export default function CheckInPicker({ enabled, level, message, onChange }: Pro
 
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
-  prompt: { ...type.label, color: colors.dim },
+  prompt: { ...type.strong },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: { paddingVertical: space.sm, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.card },
   chipOn: { backgroundColor: colors.accent },
@@ -1593,7 +1622,7 @@ import { colors } from '../theme';
 
 const LINE = colors.accent;
 const FILL = colors.accentFill;
-const AXIS = colors.border;
+const AXIS = colors.muted;
 const TEXT = colors.muted;
 const HEIGHT = 194;
 // SVG text does not inherit the app font on web, where it would fall back to a serif face.
@@ -1674,7 +1703,7 @@ export default function BodyMapScreen({ spot }: Props) {
   const [day, setDay] = useState(0);
   const [selected, setSelected] = useState<Muscle | null>(null);
 
-  const mapWidth = Math.min(screenWidth - 48, 236);
+  const mapWidth = Math.min(screenWidth - 48, 260);
   const dayForecast = forecast.byDay[day];
   const dayText = `${dayLabel(day)} (${weekdayLabel(asOf, day)})`;
   const selectedCheckIn = selected ? checkIns[selected] : undefined;
@@ -2089,6 +2118,7 @@ Replace `app.json` with:
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0B0D",
     "ios": {
       "supportsTablet": true
     },
@@ -2102,7 +2132,8 @@ Replace `app.json` with:
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "backgroundColor": "#0A0B0D"
     }
   }
 }
@@ -2111,7 +2142,7 @@ Replace `app.json` with:
 - [ ] **Step 4: Run the whole suite, typecheck and the web export**
 
 Run: `npm test && npm run typecheck && npx expo export --platform web --output-dir /tmp/ui-export`
-Expected: 30 test files, 288 tests pass (the 284 after Task 1 plus 4 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/ui-export` and confirm `git status --short` shows only the nineteen files of this task (2 new, 17 replaced) and no `dist/` folder.
+Expected: 30 test files, 290 tests pass (the 285 after Task 1 plus 5 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/ui-export` and confirm `git status --short` shows only the nineteen files of this task (2 new, 17 replaced) and no `dist/` folder.
 
 - [ ] **Step 5: Prove the wiring tests can fail**
 
