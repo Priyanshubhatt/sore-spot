@@ -2,7 +2,7 @@
 
 Sore Spot is an **independent prototype**. It is **not affiliated with, endorsed by, or sponsored by WHOOP, Inc.** It is a general wellness tool and **not medical advice**.
 
-It predicts which muscles are likely to be sore after your workouts, shows that on a body map, offers honest comfort and mobility ideas, and builds a safe, explained training week around your predicted soreness and recovery.
+It predicts which muscles are likely to be sore after your workouts, shows that on a body map, offers comfort and mobility ideas labelled by how strong the evidence is, and builds an explained training week around your predicted soreness and recovery, behind guardrails.
 
 > The demo runs on **synthetic** workouts and recoveries (the app shows a `SYNTHETIC DATA` banner). Nothing in the repository is anyone's real health data.
 
@@ -11,7 +11,7 @@ It predicts which muscles are likely to be sore after your workouts, shows that 
 | Tab | What it does |
 |---|---|
 | **Body map** | Front and back body with 12 muscle zones, coloured by predicted soreness (low, moderate, high). A time scrubber moves from now to a week ahead. Tap a zone to see why it is predicted sore, check in how it feels (none, mild, moderate, severe), and get comfort ideas labelled by how strong the evidence is. Untagged strength sessions ask which muscles they worked. |
-| **Plan** | Health questions first (every answer starts empty), then a goal, days per week and equipment. Builds a 7-day plan with exercises, sets and reps, and a plain-language reason for every choice, or explains why there is no plan. |
+| **Plan** | If a strength session is untagged it asks which muscles it worked first, then health questions (every answer starts empty), then a goal, days per week and equipment. Builds a 7-day plan with exercises, sets and reps, and a plain-language reason for every choice, or explains why there is no plan. |
 | **Evidence** | What the model rests on and where it stops: the soreness time curve (drawn from the model's own curve), the novelty effect, lengthening work, the stretching finding, and a plain list of limits. |
 
 ## How it works
@@ -50,7 +50,7 @@ docs/     design specs and implementation plans; DEMO.md is the 3-minute demo ru
 
 - The app runs on `data/replay.synthetic.ts` unless a local `data/replay.json` exists. That file, `.env` and `*.token.json` are git-ignored: **never commit real health data or WHOOP credentials.**
 - Health answers stay in memory and are asked again each launch. Nothing is stored or sent anywhere.
-- See `PRIVACY.md` for the prototype's privacy policy.
+- See `PRIVACY.md` for the prototype's privacy policy. It also covers the planned WHOOP export, which is not built yet.
 
 ## Honest limits
 

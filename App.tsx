@@ -20,7 +20,7 @@ export default function App() {
         {spot.replay.synthetic && <Text style={styles.banner}>{SYNTHETIC_BANNER}</Text>}
       </View>
 
-      {/* Both tabs stay mounted, so switching keeps the day, side and plan answers. */}
+      {/* All three tabs stay mounted, so switching keeps the day, side and plan answers. */}
       <View style={[styles.tab, tab !== 'body' && styles.hidden]}>
         <BodyMapScreen spot={spot} />
       </View>

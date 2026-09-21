@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 // Scans every non-test source file under app/, so text added to a component later is covered too.
 const BANNED = /diagnos|accura|clinical|prevent|cure|validated|treat|boost|oxygen|blood flow/i;
-const SORENESS_CLAIM = /(reduce|relieve) soreness/i;
-const NEGATED = /(not|n't) been shown/i;
+const SORENESS_CLAIM = /(reduc(e|es|ed|ing)|relie(ve|ves|ved|ving)|eas(e|es|ed|ing)) (the |your )?soreness/i;
+const NEGATED = /(not|n't) been shown to (reduce|relieve|ease) soreness/i;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -85,7 +85,7 @@ describe('required lines stay wired into the plan screens', () => {
     expect(shell).toMatch(/{SYNTHETIC_BANNER}/);
     expect(shell).toMatch(/{DISCLAIMER}/);
     expect(shell).toMatch(/<TabBar /);
-    // Both tabs stay mounted so switching does not lose the day, side or answers.
+    // All three tabs stay mounted so switching does not lose the day, side or answers.
     expect(shell).toMatch(/<BodyMapScreen spot={spot} \/>/);
     expect(shell).toMatch(/<PlanScreen spot={spot} \/>/);
     expect(shell).toMatch(/tab !== 'body' && styles\.hidden/);
