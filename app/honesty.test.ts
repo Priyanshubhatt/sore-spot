@@ -82,7 +82,7 @@ describe('required lines stay wired into the plan screens', () => {
 
   it('keeps the synthetic banner and the disclaimer in the shell, outside the tabs', () => {
     const shell = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8');
-    expect(shell).toMatch(/{SYNTHETIC_BANNER}/);
+    expect(shell).toMatch(/spot\.replay\.synthetic \? SYNTHETIC_BANNER : REAL_BANNER/);
     expect(shell).toMatch(/{DISCLAIMER}/);
     expect(shell).toMatch(/<TabBar /);
     // All three tabs stay mounted so switching does not lose the day, side or answers.
@@ -151,6 +151,12 @@ describe('the look stays on the theme', () => {
   it('keeps the honesty caveat and the check-in question in sentence case, not in the small uppercase tag style', () => {
     expect(text('components/MoveList.tsx')).toMatch(/heading: { \.\.\.type\.strong }/);
     expect(text('components/CheckInPicker.tsx')).toMatch(/prompt: { \.\.\.type\.strong }/);
+  });
+
+  it('takes "now" from the replay, so a real export is forecast from when it was made, and labels real data as real', () => {
+    expect(text('useSoreSpot.ts')).toMatch(/replayAsOf\(replay\)/);
+    expect(text('useSoreSpot.ts')).not.toMatch(/DEMO_AS_OF/);
+    expect(text('planCopy.ts')).toMatch(/REAL_BANNER = 'REAL DATA/);
   });
 
   it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {

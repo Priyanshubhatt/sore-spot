@@ -40,6 +40,10 @@ The forecast is fixed at **2026-09-19 20:00 UTC** (Saturday evening, after the s
 | "I would check this against real soreness logs." | That it is clinically proven, or anything that implies diagnosis. |
 | "This is a wellness tool, not medical advice." | Any claim about blood flow or oxygen. |
 
+## Using your own data in the demo
+
+Everything above describes the synthetic week: the counts, days and plans in the beat sheet are those of the synthetic data, and tests keep them true. With `data/replay.json` in place (see the README) the numbers will be yours and different. Rehearse the synthetic run first; if you show your own data, run through it once beforehand and redact anything personal from screenshots. Delete `data/replay.json` to return to the synthetic week.
+
 ## Before the meeting
 
 - Read the primary papers behind the Evidence tab, then delete the footnote line (`EVIDENCE_FOOTNOTE` in `app/evidenceCopy.ts`).

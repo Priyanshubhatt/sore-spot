@@ -6,7 +6,7 @@ import EvidenceScreen from './app/EvidenceScreen';
 import PlanScreen from './app/PlanScreen';
 import TabBar, { type Tab } from './app/components/TabBar';
 import { DISCLAIMER, SYNTHETIC_BANNER } from './app/copy';
-import { INDEPENDENT_LINE } from './app/planCopy';
+import { INDEPENDENT_LINE, REAL_BANNER } from './app/planCopy';
 import { colors, space, type } from './app/theme';
 import { useSoreSpot } from './app/useSoreSpot';
 
@@ -20,7 +20,7 @@ export default function App() {
       <View style={styles.header}>
         <Text style={styles.title}>Sore Spot</Text>
         <Text style={styles.independent}>{INDEPENDENT_LINE}</Text>
-        {spot.replay.synthetic && <Text style={styles.banner}>{SYNTHETIC_BANNER}</Text>}
+        <Text style={styles.banner}>{spot.replay.synthetic ? SYNTHETIC_BANNER : REAL_BANNER}</Text>
       </View>
 
       {/* All three tabs stay mounted, so switching keeps the day, side and plan answers. */}

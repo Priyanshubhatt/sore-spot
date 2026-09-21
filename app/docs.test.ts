@@ -11,6 +11,8 @@ import { recommend } from './mobility/recommend';
 import { BUILD_PLAN, CHANGE_ANSWERS, NONE_OF_THESE, PLAN_SKIP_TAGS, TAB_LABELS } from './planCopy';
 import { DEFAULT_CHOICE, GOAL_OPTIONS, computePlan } from './planFlow';
 import { answerMedicalCondition, answerNoRedFlags, answerUnder18, initialScreening } from './screening';
+import { REQUIRED_VARS } from '../scripts/whoop/env';
+import { SCOPES } from '../scripts/whoop/http';
 
 const read = (rel: string) => readFileSync(join(__dirname, '..', rel), 'utf8').replace(/\r\n/g, '\n');
 const readme = read('README.md');
@@ -69,6 +71,32 @@ describe('README', () => {
     expect(readme).not.toMatch(/\bsafe\b/i);
     expect(readme).not.toMatch(/\bhonest comfort/i);
     expect(readme).toMatch(/labelled by how strong the evidence is/);
+  });
+});
+
+describe('the README section on using your own WHOOP data', () => {
+  it('names the three variables the script reads, the redirect URL and the npm command that exists', () => {
+    for (const name of REQUIRED_VARS) expect(readme, name).toContain(name);
+    expect(readme).toContain('http://localhost:3000/callback');
+    expect(readme).toContain('npm run export-whoop');
+    const pkg = JSON.parse(read('package.json'));
+    expect(pkg.scripts['export-whoop']).toContain('export-whoop.ts');
+  });
+
+  it('says which permissions are asked for, and that the script refuses to run unless the private files are git-ignored', () => {
+    expect(readme).toMatch(/only for the workout and recovery read permissions/);
+    expect([...SCOPES]).toEqual(['read:workout', 'read:recovery', 'offline']);
+    expect(readme).toMatch(/refuses to run unless `\.env`, `data\/replay\.json` and `whoop\.token\.json` are all git-ignored/);
+    expect(readme).toMatch(/never prints a secret or a token/);
+  });
+
+  it('warns to use a private network rather than a public tunnel with real data', () => {
+    expect(readme).toMatch(/rather than a public tunnel/);
+  });
+
+  it('tells the presenter the runbook numbers are those of the synthetic week', () => {
+    expect(demo).toMatch(/describes the synthetic week/);
+    expect(demo).toMatch(/redact anything personal/);
   });
 });
 
