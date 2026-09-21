@@ -51,14 +51,26 @@ describe('required lines stay wired into the plan screens', () => {
   it('starts every health answer unanswered and never pre-answers one', () => {
     expect(text('PlanScreen.tsx')).toMatch(/useState<Screening>\(initialScreening\)/);
     for (const rel of ['PlanScreen.tsx', 'components/HealthQuestions.tsx']) {
-      expect(text(rel), rel).not.toMatch(/under18: false|medicalCondition: false|redFlags: \[\]/);
+      expect(text(rel), rel).not.toMatch(/under18:\s*false|medicalCondition:\s*false|redFlags:\s*\[\]/);
     }
+  });
+
+  it('keeps Build my plan disabled until every health question is answered', () => {
+    expect(text('PlanScreen.tsx')).toMatch(/disabled={!isAnswered\(screening\)}/);
+  });
+
+  it('asks every red flag, shows the disclaimer only with a plan and the message only when blocked', () => {
+    expect(text('components/HealthQuestions.tsx')).toMatch(/RED_FLAGS\.map\(/);
+    const view = text('components/PlanResultView.tsx');
+    const planBranch = view.indexOf('const { plan } = result');
+    expect(planBranch).toBeGreaterThan(-1);
+    expect(view.indexOf('{result.message}')).toBeLessThan(planBranch);
+    expect(view.indexOf('{PLAN_DISCLAIMER}')).toBeGreaterThan(planBranch);
   });
 
   it('runs the plan through the engine guardrails, never around them', () => {
     expect(text('planFlow.ts')).toMatch(/planOrGuardrail\(/);
-    expect(text('planFlow.ts')).not.toMatch(/buildPlan/);
-    expect(text('PlanScreen.tsx')).not.toMatch(/buildPlan/);
+    for (const f of files) expect(f.text, f.rel).not.toMatch(/buildPlan/);
   });
 
   it('keeps the synthetic banner and the disclaimer in the shell, outside the tabs', () => {
@@ -69,6 +81,10 @@ describe('required lines stay wired into the plan screens', () => {
     // Both tabs stay mounted so switching does not lose the day, side or answers.
     expect(shell).toMatch(/<BodyMapScreen spot={spot} \/>/);
     expect(shell).toMatch(/<PlanScreen spot={spot} \/>/);
+    expect(shell).toMatch(/tab !== 'body' && styles\.hidden/);
+    expect(shell).toMatch(/tab !== 'plan' && styles\.hidden/);
+    expect(shell).toMatch(/hidden: { display: 'none' }/);
+    expect(shell).not.toMatch(BANNED);
   });
 });
 
