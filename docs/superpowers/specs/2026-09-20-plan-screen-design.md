@@ -1,7 +1,7 @@
 # Sore Spot: Plan Screen, Health Screens, Navigation and Shared State (Sub-project C1b)
 
 **Date:** 2026-09-20
-**Status:** Defaults approved in chat; written spec and plan pending review
+**Status:** Built and reviewed on `feat/plan-screen`; 231 tests, final review clean (no Critical)
 **Builds on:** the plan engine and guardrails (`2026-09-20-plan-engine-design.md`, branch `feat/plan-engine`), B1 and B2 (unmerged; C1b is stacked on C1a).
 **Roadmap:** B1, B2, C1a (done) -> **C1b (this spec: the Plan tab, health screens, navigation, shared state)** -> C2 (evidence panel, polish, README) -> D (WHOOP export script).
 
@@ -57,10 +57,10 @@ app/honesty.test.ts      + wiring tests (existing file, extended)
 1. `forecastState`: the untagged demo session is listed with a recognizable label; tagging it clears the prompt and changes the forecast; inputs are not mutated; a check-in nudges sensitivity from the default and repeating it never stacks (4 tests).
 2. `screening`: starts fully unanswered; finished only when all three are answered; red-flag order and mutual exclusion with "none"; unticking the last flag is unanswered; no mutation; eligibility passed to the engine exactly as answered (6 tests).
 3. `planFlow`: the demo-week plan on "no" answers (with the history note, and without it once tagged); never a plan while any of the three answers is missing (each tested alone); each red flag, under 18 and medical condition stop; a weight goal and 6 or 7 days are declined; every goal, 3 to 5 days and equipment the engine accepts builds a plan; day headings and sets wording (9 tests).
-4. Wiring tests in the honesty scan (5 tests).
-5. Suite: 228 tests in 26 files (204 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
-6. Browser drive (headless Edge, 390x844 and 375x667, 126 checks): tabs and hidden body map; the gate and skipping it; nothing pre-answered; Build disabled until all three answered (also when two of three are); the demo plan (Sun tomorrow, easy day, rest day, back squat, why bullets, incomplete-history note, disclaimer); Change answers keeps answers; under 18, a red flag, a medical condition, 6 days and a weight goal each give no plan and their message; unticking the last flag is unanswered; strength with bodyweight builds; tabs keep state; tagging from the gate lifts it and drops the note; the form and result open at the top; the banner, footer and tab bar stay in view; the body map sheet still opens; no console errors.
-7. Mutation checks: each of 14 wiring and logic lines was broken on purpose and caught (unanswered start state, unticking to "none", finished-check, red-flag order, red flags defaulting to none, eligibility defaulting to no, timed-hold wording, check-ins ignored, disclaimer, blocked message, health prompt, pre-answered start state in the screen, shell disclaimer). One first survived (a null red-flag screen quietly becoming "none" was hidden by the empty eligibility answers) and got its own test.
+4. Wiring tests in the honesty scan (8 tests), including that Build stays disabled until answered, that every red flag is rendered, that the disclaimer sits only in the plan branch and the message only in the blocked branch, that both tabs are hidden rather than unmounted, and that `buildPlan` appears nowhere in the app.
+5. Suite: 231 tests in 26 files (204 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
+6. Browser drive (headless Edge, 390x844 and 375x667, 132 checks, including: build a plan, tag a session on the body map, return, and the plan has updated): tabs and hidden body map; the gate and skipping it; nothing pre-answered; Build disabled until all three answered (also when two of three are); the demo plan (Sun tomorrow, easy day, rest day, back squat, why bullets, incomplete-history note, disclaimer); Change answers keeps answers; under 18, a red flag, a medical condition, 6 days and a weight goal each give no plan and their message; unticking the last flag is unanswered; strength with bodyweight builds; tabs keep state; tagging from the gate lifts it and drops the note; the form and result open at the top; the banner, footer and tab bar stay in view; the body map sheet still opens; no console errors.
+7. Mutation checks: each of 25 wiring and logic lines was broken on purpose and caught (unanswered start state, unticking to "none", finished-check, red-flag order, red flags defaulting to none, eligibility defaulting to no, timed-hold wording, check-ins ignored, disclaimer, blocked message, health prompt, pre-answered start state in the screen, shell disclaimer). One first survived (a null red-flag screen quietly becoming "none" was hidden by the empty eligibility answers) and got its own test.
 
 ## Risks
 

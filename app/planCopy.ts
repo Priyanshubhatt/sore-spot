@@ -1,4 +1,4 @@
-export const TAB_LABELS = { body: 'Body map', plan: 'Plan' } as const;
+export const TAB_LABELS = { body: 'Body map', plan: 'Plan', evidence: 'Evidence' } as const;
 
 export const PLAN_TAG_GATE_HEADING = 'Before we plan';
 export const PLAN_TAG_GATE_TEXT =
