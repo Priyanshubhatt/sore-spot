@@ -34,6 +34,44 @@ describe('required lines stay wired into the sheet', () => {
   });
 });
 
+describe('required lines stay wired into the plan screens', () => {
+  it('shows the plan disclaimer with every plan, and the engine message for every blocked result', () => {
+    expect(text('components/PlanResultView.tsx')).toMatch(/{PLAN_DISCLAIMER}/);
+    expect(text('components/PlanResultView.tsx')).toMatch(/{result\.message}/);
+  });
+
+  it('frames the health screen with the engine prompt and asks every engine question', () => {
+    const health = text('components/HealthQuestions.tsx');
+    expect(health).toMatch(/{RED_FLAG_PROMPT}/);
+    expect(health).toMatch(/RED_FLAG_QUESTIONS\[flag\]/);
+    expect(health).toMatch(/question={UNDER_18_QUESTION}/);
+    expect(health).toMatch(/question={MEDICAL_CONDITION_QUESTION}/);
+  });
+
+  it('starts every health answer unanswered and never pre-answers one', () => {
+    expect(text('PlanScreen.tsx')).toMatch(/useState<Screening>\(initialScreening\)/);
+    for (const rel of ['PlanScreen.tsx', 'components/HealthQuestions.tsx']) {
+      expect(text(rel), rel).not.toMatch(/under18: false|medicalCondition: false|redFlags: \[\]/);
+    }
+  });
+
+  it('runs the plan through the engine guardrails, never around them', () => {
+    expect(text('planFlow.ts')).toMatch(/planOrGuardrail\(/);
+    expect(text('planFlow.ts')).not.toMatch(/buildPlan/);
+    expect(text('PlanScreen.tsx')).not.toMatch(/buildPlan/);
+  });
+
+  it('keeps the synthetic banner and the disclaimer in the shell, outside the tabs', () => {
+    const shell = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8');
+    expect(shell).toMatch(/{SYNTHETIC_BANNER}/);
+    expect(shell).toMatch(/{DISCLAIMER}/);
+    expect(shell).toMatch(/<TabBar /);
+    // Both tabs stay mounted so switching does not lose the day, side or answers.
+    expect(shell).toMatch(/<BodyMapScreen spot={spot} \/>/);
+    expect(shell).toMatch(/<PlanScreen spot={spot} \/>/);
+  });
+});
+
 describe('honesty scan over the app source', () => {
   it('found the app source files', () => {
     expect(files.length).toBeGreaterThanOrEqual(12);
