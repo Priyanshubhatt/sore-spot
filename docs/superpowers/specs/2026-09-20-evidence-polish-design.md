@@ -1,7 +1,7 @@
 # Sore Spot: Evidence Tab, Accessibility Polish, README and Demo Runbook (Sub-project C2)
 
 **Date:** 2026-09-20
-**Status:** Built and reviewed on `feat/evidence-polish`; 258 tests
+**Status:** Built and reviewed on `feat/evidence-polish`; 265 tests, final review clean (no Critical)
 **Builds on:** the plan screen (`2026-09-20-plan-screen-design.md`, branch `feat/plan-screen`), and through it the plan engine, B1 and B2.
 **Roadmap:** B1, B2, C1a, C1b (done) -> **C2 (this spec: Evidence tab, accessibility polish, README, demo runbook)** -> D (WHOOP export script).
 
@@ -37,7 +37,8 @@ A third tab, **Evidence**, in the shell next to **Body map** and **Plan**. Like 
 
 ### README and demo runbook
 - `README.md` replaces the one-line README on the remote `main` when the branches are reconciled: what it is, the independent-prototype and not-affiliated statement, the three tabs, how it works (rules decide), the guardrails, how to run it, layout, data and privacy, honest limits, status, MIT license. It says the export of real WHOOP history is not built yet.
-- `docs/DEMO.md` maps the handoff's 3-minute beat sheet to exact taps, with the fallback ladder, the say-this-not-that table, and pre-meeting to-dos. Its quoted facts are checked against the real engine output by a test: which muscles are High Now, the plan's day titles, the Sunday note when Wednesday is tagged Upper body (and its return to "new for you" when tagged Lower body), and Thursday's exercises. The do-not-say table quotes banned claims on purpose, so that one section is excluded from the docs' banned-word scan.
+- `LICENSE` and `PRIVACY.md` are identical copies of the files on the remote `main` branch, so the README's MIT statement and privacy link resolve on this branch and merge without conflict. A test checks they exist and say what the README claims.
+- `docs/DEMO.md` maps the handoff's 3-minute beat sheet to exact taps, with the fallback ladder, the say-this-not-that table, and pre-meeting to-dos. It is written around what the app really does (the final review found several steps a presenter could not follow): the scrubber holds High through +3d, eases from +4d and is gone by +6d; comfort ideas show for High muscles while range-of-motion stretches show for Low and Moderate ones, so the check-in step uses a Moderate check-in on a Low muscle to show both; a session cannot be re-tagged once tagged, so the plan step builds the plan first without the tag and then tags the session on the Body map to show the plan update by itself. Its quoted facts are checked against the real engine output by tests: the band on each scrubber day, the comfort and stretch names, the plan's day titles and notes (the runbook quotes the app's own note text, so a reworded note fails the test), and every control label it tells the presenter to tap. The do-not-say table quotes banned claims on purpose, so that one section is excluded from the docs' banned-word scan.
 
 ## Structure
 
@@ -59,10 +60,10 @@ README.md, docs/DEMO.md, app/docs.test.ts
 
 1. `evidence`: the series is the engine curve (0 to 192 hours, every 6), builds, peaks at 48 hours and ends at 0; axis ticks 0 to 8; chart geometry (padding, level 1 at the top, level 0 on the axis, one point per sample, the fill closes to the axis) (6 tests). Copy: unique non-empty cards; novelty numbers come from the engine constants; the stretching card says it is not a soreness fix and never that stretching reduces or relieves soreness; the label lines are the move list's own; every limit the pitch must own up to is present; the footnote is present (6 tests).
 2. Wiring tests in the honesty scan (4 more): the chart uses `curveSeries()` and the series uses `timecurve`; the screen renders every card, the label lines, the limits card and the footnote; selected and checked state uses `aria-*` and never `accessibilityState`. The shell test also requires the third tab mounted and hidden like the others.
-3. `docs`: the README's first lines carry the not-affiliated and not-medical-advice statements, and it names the synthetic data, the limits, the data-handling rule and the three tabs; the runbook covers the ladder, every tab and the check-in labels, and its engine facts match the real output; banned-word and "reduce soreness" scans over both documents (11 tests).
-4. Suite: 258 tests in 28 files (231 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
+3. `docs`: the README's first lines carry the not-affiliated and not-medical-advice statements, and it names the synthetic data, the limits, the data-handling rule and the three tabs; the runbook covers the ladder, every tab and the check-in labels, and its engine facts match the real output; banned-word and "reduce, relieve or ease soreness" scans over both documents (every inflection is caught, and a line is excused only if it says the claim has not been shown), the licence and privacy files exist, and the README does not call the plan safe or the comfort ideas honest (18 tests).
+4. Suite: 265 tests in 28 files (231 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
 5. Browser drive (headless Edge, 390x844 and 375x667, 210 checks): everything the plan screen drive covers, updated for the new roles, plus: the Evidence tab and its hidden siblings; the chart is drawn, fits the width, labels its axes and peak, does not overlap labels and uses the sans-serif font; every card, the novelty numbers, the stretching card, all seven limits and the footnote are present; the banner, footer and tab bar stay in view (also scrolled); state attributes render (`None of these apply` and the chosen No report `aria-checked`, a ticked flag reports checked, tabs report selected, no button carries `aria-selected`, six radiogroups, seven checkboxes); no console errors.
-6. Mutation checks: each of 22 guards was broken on purpose and caught (the curve, the stretching honesty line, a limit, the footnote, the novelty numbers, the limits heading and list, the hidden third tab, the tab, chip and "none" aria props, the README statement and two runbook facts).
+6. Mutation checks: each of 32 guards was broken on purpose and caught (the curve, the stretching honesty line, a limit, the footnote, the novelty numbers, the limits heading and list, the hidden third tab, the tab, chip and "none" aria props, the README statement and two runbook facts).
 
 ## Risks
 

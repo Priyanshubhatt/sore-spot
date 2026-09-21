@@ -28,7 +28,7 @@ Every task's requirements include these, copied from the spec:
 
 **Line endings:** this repo's working tree has Windows line endings. For every file below marked "replace whole file", overwrite the entire file with the block shown using the file-writing tool. Do not use search-and-replace edits: multi-line matches silently fail on Windows line endings.
 
-**How these files were produced:** every block was first run in a scratch copy: 258 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and a 210-check headless-browser drive at 390x844 and 375x667 passing. Twenty-two guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly.
+**How these files were produced:** every block was first run in a scratch copy: 265 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and a 210-check headless-browser drive at 390x844 and 375x667 passing. Thirty-two guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly.
 
 ## File Structure
 
@@ -42,7 +42,7 @@ app/planCopy.ts (whole file)                 + the Evidence tab label           
 App.tsx (whole file)                         mounts the third tab                                          (Task 2)
 app/components/ChipRow.tsx, HealthQuestions.tsx, CheckInPicker.tsx, app/BodyMapScreen.tsx (whole files)   aria roles and state   (Task 2)
 app/honesty.test.ts (whole file)             + Evidence and aria wiring tests                              (Task 2)
-README.md, docs/DEMO.md, app/docs.test.ts                                                                  (Task 3)
+README.md, docs/DEMO.md, LICENSE, PRIVACY.md, app/docs.test.ts                                    (Task 3)
 ```
 
 ---
@@ -382,8 +382,8 @@ import { describe, expect, it } from 'vitest';
 
 // Scans every non-test source file under app/, so text added to a component later is covered too.
 const BANNED = /diagnos|accura|clinical|prevent|cure|validated|treat|boost|oxygen|blood flow/i;
-const SORENESS_CLAIM = /(reduce|relieve) soreness/i;
-const NEGATED = /(not|n't) been shown/i;
+const SORENESS_CLAIM = /(reduc(e|es|ed|ing)|relie(ve|ves|ved|ving)|eas(e|es|ed|ing)) (the |your )?soreness/i;
+const NEGATED = /(not|n't) been shown to (reduce|relieve|ease) soreness/i;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -463,7 +463,7 @@ describe('required lines stay wired into the plan screens', () => {
     expect(shell).toMatch(/{SYNTHETIC_BANNER}/);
     expect(shell).toMatch(/{DISCLAIMER}/);
     expect(shell).toMatch(/<TabBar /);
-    // Both tabs stay mounted so switching does not lose the day, side or answers.
+    // All three tabs stay mounted so switching does not lose the day, side or answers.
     expect(shell).toMatch(/<BodyMapScreen spot={spot} \/>/);
     expect(shell).toMatch(/<PlanScreen spot={spot} \/>/);
     expect(shell).toMatch(/tab !== 'body' && styles\.hidden/);
@@ -780,7 +780,7 @@ export default function App() {
         {spot.replay.synthetic && <Text style={styles.banner}>{SYNTHETIC_BANNER}</Text>}
       </View>
 
-      {/* Both tabs stay mounted, so switching keeps the day, side and plan answers. */}
+      {/* All three tabs stay mounted, so switching keeps the day, side and plan answers. */}
       <View style={[styles.tab, tab !== 'body' && styles.hidden]}>
         <BodyMapScreen spot={spot} />
       </View>
@@ -1226,12 +1226,14 @@ EOF
 ### Task 3: README, demo runbook and their tests
 
 **Files:**
-- Create: `README.md`, `docs/DEMO.md`
+- Create: `README.md`, `docs/DEMO.md`, `LICENSE`, `PRIVACY.md`
 - Test: `app/docs.test.ts`
 
 **Interfaces:**
 - Consumes: `syntheticReplay`, `DEMO_AS_OF`, `CHECKIN_LABELS`, `TAB_LABELS`, `buildForecastState`, `DEFAULT_CHOICE`, `computePlan` and the screening helpers, all unchanged.
 - Produces: the two documents and a test tying the runbook's quoted facts to the engine's real output. No later task depends on them.
+
+`LICENSE` and `PRIVACY.md` are identical copies of the files the project owner already has on the `main` branch of the remote, so the README's links resolve on this branch and they merge without conflict.
 
 The runbook's "Say this, not that" table quotes banned claims on purpose (it tells the presenter what not to say), so `app/docs.test.ts` removes that one section before its banned-word scan.
 
@@ -1244,11 +1246,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { syntheticReplay } from '../data/replay.synthetic';
+import { MUSCLES, RED_FLAG_QUESTIONS, UNDER_18_QUESTION, type Muscle } from '../engine';
+import { HISTORY_INCOMPLETE_NOTE } from '../engine/planText';
 import { DEMO_AS_OF } from './config';
-import { CHECKIN_LABELS } from './copy';
+import { CHECKIN_LABELS, SAVE_STRETCHING_TEXT } from './copy';
 import { buildForecastState } from './forecastState';
-import { DEFAULT_CHOICE, computePlan } from './planFlow';
-import { TAB_LABELS } from './planCopy';
+import { recommend } from './mobility/recommend';
+import { BUILD_PLAN, CHANGE_ANSWERS, NONE_OF_THESE, PLAN_SKIP_TAGS, TAB_LABELS } from './planCopy';
+import { DEFAULT_CHOICE, GOAL_OPTIONS, computePlan } from './planFlow';
 import { answerMedicalCondition, answerNoRedFlags, answerUnder18, initialScreening } from './screening';
 
 const read = (rel: string) => readFileSync(join(__dirname, '..', rel), 'utf8').replace(/\r\n/g, '\n');
@@ -1256,12 +1261,26 @@ const readme = read('README.md');
 const demo = read('docs/DEMO.md');
 
 const BANNED = /diagnos|accura|clinical|prevent|cure|validated|treat|boost|oxygen|blood flow/i;
-const SORENESS_CLAIM = /(reduce|relieve) soreness/i;
-const NEGATED = /(not|n't) been shown/i;
+const SORENESS_CLAIM = /(reduc(e|es|ed|ing)|relie(ve|ves|ved|ving)|eas(e|es|ed|ing)) (the |your )?soreness/i;
+const NEGATED = /(not|n't) been shown to (reduce|relieve|ease) soreness/i;
 
 // The "say this, not that" table quotes the banned claims on purpose, so it is the one part left out of the scan.
 const DO_NOT_SAY = /## Say this, not that[\s\S]*?(?=\n## )/;
 const demoScanned = demo.replace(DO_NOT_SAY, '');
+
+const FOUR: Muscle[] = ['calves', 'glutes', 'hamstrings', 'quads'];
+const answered = answerMedicalCondition(answerUnder18(answerNoRedFlags(initialScreening()), false), false);
+
+const stateOf = (tags: Record<string, 'upper' | 'lower'> = {}) =>
+  buildForecastState(syntheticReplay.workouts, tags, {}, DEMO_AS_OF);
+const planFor = (tags: Record<string, 'upper' | 'lower'> = {}) => {
+  const s = stateOf(tags);
+  const r = computePlan({ forecast: s.forecast, workouts: s.tagged, recovery: syntheticReplay.recovery ?? [], asOf: DEMO_AS_OF, screening: answered, choice: DEFAULT_CHOICE });
+  if (r.kind !== 'plan') throw new Error('expected a plan');
+  return r.plan;
+};
+const bandsOn = (day: number) => stateOf().forecast.byDay[day];
+const inBand = (day: number, band: string) => MUSCLES.filter((m) => bandsOn(day)[m].band === band).sort();
 
 describe('README', () => {
   it('says what it is and what it is not, on its first lines', () => {
@@ -1278,21 +1297,37 @@ describe('README', () => {
     expect(readme).toMatch(/primary papers are still being checked/);
   });
 
-  it('keeps real data and credentials out of the repository', () => {
+  it('keeps real data and credentials out of the repository, and the .gitignore really does', () => {
     expect(readme).toMatch(/data\/replay\.json/);
     expect(readme).toMatch(/\.env/);
     expect(readme).toMatch(/never commit real health data or WHOOP credentials/i);
+    const ignore = read('.gitignore').split('\n').map((l) => l.trim());
+    for (const entry of ['.env', 'data/replay.json', '*.token.json']) expect(ignore, entry).toContain(entry);
   });
 
   it('names the three tabs', () => {
     for (const label of Object.values(TAB_LABELS)) expect(readme, label).toContain(`**${label}**`);
   });
+
+  it('does not call the plan safe or the comfort ideas honest: it says what they rest on', () => {
+    expect(readme).not.toMatch(/\bsafe\b/i);
+    expect(readme).not.toMatch(/\bhonest comfort/i);
+    expect(readme).toMatch(/labelled by how strong the evidence is/);
+  });
 });
 
-describe('demo runbook', () => {
-  it('covers the fallback ladder and every tab', () => {
+describe('the files the README points at', () => {
+  it('ships the MIT licence and the privacy policy it names', () => {
+    expect(readme).toMatch(/MIT\. See `LICENSE`/);
+    expect(read('LICENSE')).toMatch(/^MIT License/);
+    expect(read('PRIVACY.md')).toMatch(/not affiliated with, endorsed by, or sponsored by WHOOP/);
+  });
+});
+
+describe('demo runbook: structure', () => {
+  it('covers the fallback ladder and every tab by name', () => {
     for (const step of ['Primary', 'Fallback 1', 'Fallback 2', 'Always']) expect(demo, step).toContain(step);
-    for (const label of Object.values(TAB_LABELS)) expect(demo, label).toContain(label);
+    for (const label of Object.values(TAB_LABELS)) expect(demo, label).toContain(`**${label}**`);
   });
 
   it('tells the presenter to say it is synthetic and independent', () => {
@@ -1300,43 +1335,83 @@ describe('demo runbook', () => {
     expect(demo).toMatch(/not affiliated with WHOOP/);
   });
 
-  it('quotes the check-in labels the app really shows', () => {
-    for (const label of Object.values(CHECKIN_LABELS)) expect(demo, label).toContain(`**${label}**`);
+  it('never calls the model a follower of the published time course: the curve is hand-tuned to its shape', () => {
+    expect(demo).not.toMatch(/follows the published/);
+    expect(demo).toMatch(/hand-tuned to the published shape of soreness over time/);
   });
 
-  it('matches what the engine really produces on the demo data', () => {
-    expect(demo).toContain('Sat Sep 19 2026, 20:00 UTC');
-    expect(DEMO_AS_OF.toISOString()).toBe('2026-09-19T20:00:00.000Z');
+  it('names the controls the presenter taps by the labels the app shows', () => {
+    for (const label of Object.values(CHECKIN_LABELS)) expect(demo, label).toContain(`**${label}**`);
+    for (const label of [BUILD_PLAN, CHANGE_ANSWERS, NONE_OF_THESE, PLAN_SKIP_TAGS]) expect(demo, label).toContain(`**${label}**`);
+    expect(demo).toContain(`**${RED_FLAG_QUESTIONS['sharp-pain'].split(',')[0]}**`);
+    expect(demo).toContain(`**${UNDER_18_QUESTION}**`);
+    expect(demo).toContain(`**${GOAL_OPTIONS.find((o) => o.value === 'lose-weight')!.label}**`);
+    expect(demo).toContain('**6**');
+  });
+});
 
-    const answered = answerMedicalCondition(answerUnder18(answerNoRedFlags(initialScreening()), false), false);
-    const planFor = (tags: Record<string, 'upper' | 'lower'>) => {
-      const s = buildForecastState(syntheticReplay.workouts, tags, {}, DEMO_AS_OF);
-      const r = computePlan({ forecast: s.forecast, workouts: s.tagged, recovery: syntheticReplay.recovery ?? [], asOf: DEMO_AS_OF, screening: answered, choice: DEFAULT_CHOICE });
-      if (r.kind !== 'plan') throw new Error('expected a plan');
-      return { plan: r.plan, state: s };
-    };
+describe('demo runbook: facts match the engine and the app', () => {
+  it('quotes the forecast time the way the app shows it', () => {
+    const shown = `${DEMO_AS_OF.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
+    expect(shown).toBe('2026-09-19 20:00 UTC');
+    expect(demo).toContain(shown);
+  });
 
-    // Now: glutes, quads, hamstrings and calves are High, and nothing else is.
-    const now = planFor({}).state.forecast.byDay[0];
-    const high = Object.entries(now).filter(([, m]) => m.band === 'high').map(([k]) => k).sort();
-    expect(high).toEqual(['calves', 'glutes', 'hamstrings', 'quads']);
+  it('gets the scrubber right: High through +3d, easing from +4d, gone by +6d', () => {
+    for (const d of [0, 1, 2, 3]) expect(inBand(d, 'high'), `+${d}d`).toEqual(FOUR);
+    expect(inBand(4, 'high')).toEqual(['quads']);
+    expect(inBand(4, 'moderate')).toEqual(['adductors', 'calves', 'glutes', 'hamstrings']);
+    expect(inBand(5, 'high')).toEqual([]);
+    expect(inBand(5, 'moderate')).toEqual(FOUR);
+    for (const d of [6, 7]) expect([...inBand(d, 'high'), ...inBand(d, 'moderate')], `+${d}d`).toEqual([]);
     expect(demo).toMatch(/glutes, quads, hamstrings and calves are \*\*High\*\*/);
+    expect(demo).toMatch(/High through \*\*\+3d\*\*, ease to Moderate from \*\*\+4d\*\* \(the quads a day later, at \*\*\+5d\*\*\), and are gone by \*\*\+6d\*\*/);
+  });
 
-    // Tagging Wednesday "Upper body": Sunday's upper day gets fewer sets, for the muscles the runbook names.
-    const upper = planFor({ 'd-wed-strength': 'upper' }).plan;
-    expect(upper.days.map((d) => d.title)).toEqual(['Upper body', 'Easy day', 'Rest day', 'Upper body', 'Lower body', 'Rest day', 'Rest day']);
-    expect(upper.days[0].exercises[0].note).toBe('Fewer sets: chest, triceps and shoulders predicted sore.');
-    expect(demo).toContain('fewer sets: chest, triceps and shoulders predicted sore');
+  it('gets the comfort ideas and the range-of-motion stretch right', () => {
+    const high = recommend('quads', 'high');
+    expect(high.rom).toEqual([]);
+    expect(high.note).toBe('save-stretching');
+    for (const move of high.comfort) expect(demo, move.name).toContain(move.name);
+    expect(demo).toContain(SAVE_STRETCHING_TEXT.replace('Save', 'save').replace('.', ''));
 
-    // Tagging it "Lower body" instead: Sunday goes back to "new for you".
-    const lower = planFor({ 'd-wed-strength': 'lower' }).plan;
-    expect(lower.days[0].exercises[0].note).toBe('New for you: start light.');
-    expect(demo).toContain('new for you, start light');
+    const moderateChest = recommend('chest', 'low', 2);
+    expect(moderateChest.band).toBe('moderate');
+    expect(moderateChest.rom.map((m) => m.name)).toEqual(['Doorway chest stretch']);
+    expect(moderateChest.comfort.length).toBeGreaterThan(0);
+    expect(demo).toContain('Doorway chest stretch');
+    expect(bandsOn(0).chest.band).toBe('low');
+  });
 
-    // Thursday: back squat at fewer sets, a hip thrust and a reverse lunge, each easing off the sore muscles.
+  it('gets the plan and its reaction to tagging right', () => {
+    const untagged = planFor();
+    expect(untagged.notes).toContain(HISTORY_INCOMPLETE_NOTE);
+    expect(untagged.days.map((d) => d.title)).toEqual(['Upper body', 'Easy day', 'Rest day', 'Upper body', 'Lower body', 'Rest day', 'Rest day']);
+    const newForYou = untagged.days[0].exercises[0].note!;
+    expect(newForYou).toMatch(/^New for you/);
+    expect(untagged.days[1].kind).toBe('easy');
+    // One literal, checked against both the engine and the runbook, so neither can drift without this test failing.
+    const sore = 'quads, glutes, hamstrings and calves predicted sore';
+    expect(untagged.days[1].why[0]).toContain(sore);
+    expect(demo).toContain(sore);
+
+    const upper = planFor({ 'd-wed-strength': 'upper' });
+    expect(upper.notes).not.toContain(HISTORY_INCOMPLETE_NOTE);
+    const fewerSets = upper.days[0].exercises[0].note!;
+    expect(fewerSets).toMatch(/^Fewer sets: chest, triceps and shoulders/);
+    expect(upper.days[0].exercises[0].sets).toBe(untagged.days[0].exercises[0].sets);
+
     const thursday = upper.days[4].exercises.map((e) => e.name);
     expect(thursday).toEqual(expect.arrayContaining(['Barbell back squat', 'Barbell hip thrust', 'Reverse lunge']));
+
+    expect(demo).toContain('a note that some workouts are not counted');
+    // The runbook quotes the app's own notes, minus the full stop.
+    expect(demo).toContain(`*${newForYou.replace(/\.$/, '')}*`);
+    expect(demo).toContain(`*${fewerSets.replace(/\.$/, '')}*`);
     expect(demo).toMatch(/back squat at fewer sets, a hip thrust and a reverse lunge/);
+    expect(demo).toContain('the not-counted note is gone');
+    // Tags cannot be changed once given, so the runbook must not tell the presenter to re-tag.
+    expect(demo).not.toMatch(/tag the session \*\*Lower body\*\* instead/i);
   });
 });
 
@@ -1350,12 +1425,21 @@ describe('honesty scan over the docs', () => {
     expect(demoScanned).not.toMatch(BANNED);
   });
 
-  it('only mentions reducing or relieving soreness in a line that says it has not been shown', () => {
+  it('only mentions reducing, relieving or easing soreness in a line that says it has not been shown', () => {
     for (const [name, doc] of [['README.md', readme], ['docs/DEMO.md', demoScanned]] as const) {
       for (const line of doc.split('\n')) {
         if (SORENESS_CLAIM.test(line)) expect(line, `${name}: ${line.trim()}`).toMatch(NEGATED);
       }
     }
+  });
+
+  it('catches every inflection of the claim, and only excuses a line that says it has not been shown', () => {
+    for (const bad of ['Stretching reduces soreness.', 'It relieves soreness fast.', 'Foam rolling eases soreness.', 'to ease your soreness']) {
+      expect(SORENESS_CLAIM.test(bad), bad).toBe(true);
+      expect(NEGATED.test(bad), bad).toBe(false);
+    }
+    expect(NEGATED.test("Stretching hasn't been shown to reduce soreness.")).toBe(true);
+    expect(SORENESS_CLAIM.test('Save stretching for when soreness eases.')).toBe(false);
   });
 });
 ```
@@ -1374,7 +1458,7 @@ Create `README.md`:
 
 Sore Spot is an **independent prototype**. It is **not affiliated with, endorsed by, or sponsored by WHOOP, Inc.** It is a general wellness tool and **not medical advice**.
 
-It predicts which muscles are likely to be sore after your workouts, shows that on a body map, offers honest comfort and mobility ideas, and builds a safe, explained training week around your predicted soreness and recovery.
+It predicts which muscles are likely to be sore after your workouts, shows that on a body map, offers comfort and mobility ideas labelled by how strong the evidence is, and builds an explained training week around your predicted soreness and recovery, behind guardrails.
 
 > The demo runs on **synthetic** workouts and recoveries (the app shows a `SYNTHETIC DATA` banner). Nothing in the repository is anyone's real health data.
 
@@ -1383,7 +1467,7 @@ It predicts which muscles are likely to be sore after your workouts, shows that 
 | Tab | What it does |
 |---|---|
 | **Body map** | Front and back body with 12 muscle zones, coloured by predicted soreness (low, moderate, high). A time scrubber moves from now to a week ahead. Tap a zone to see why it is predicted sore, check in how it feels (none, mild, moderate, severe), and get comfort ideas labelled by how strong the evidence is. Untagged strength sessions ask which muscles they worked. |
-| **Plan** | Health questions first (every answer starts empty), then a goal, days per week and equipment. Builds a 7-day plan with exercises, sets and reps, and a plain-language reason for every choice, or explains why there is no plan. |
+| **Plan** | If a strength session is untagged it asks which muscles it worked first, then health questions (every answer starts empty), then a goal, days per week and equipment. Builds a 7-day plan with exercises, sets and reps, and a plain-language reason for every choice, or explains why there is no plan. |
 | **Evidence** | What the model rests on and where it stops: the soreness time curve (drawn from the model's own curve), the novelty effect, lengthening work, the stretching finding, and a plain list of limits. |
 
 ## How it works
@@ -1422,7 +1506,7 @@ docs/     design specs and implementation plans; DEMO.md is the 3-minute demo ru
 
 - The app runs on `data/replay.synthetic.ts` unless a local `data/replay.json` exists. That file, `.env` and `*.token.json` are git-ignored: **never commit real health data or WHOOP credentials.**
 - Health answers stay in memory and are asked again each launch. Nothing is stored or sent anywhere.
-- See `PRIVACY.md` for the prototype's privacy policy.
+- See `PRIVACY.md` for the prototype's privacy policy. It also covers the planned WHOOP export, which is not built yet.
 
 ## Honest limits
 
@@ -1452,7 +1536,8 @@ Independent prototype, not affiliated with WHOOP. Everything on screen is synthe
 
 1. On the laptop, in PowerShell: `npx.cmd expo start`. Scan the QR code with the iPhone Camera; Expo Go opens the app. Laptop and phone on the same Wi-Fi, or use a phone hotspot.
 2. Open the app once and check all three tabs load. The app starts on **Body map**, day **Now**, with **Front** selected. Kill and reopen it for a clean run: check-ins, tags and health answers are not saved between launches.
-3. Have the web build ready too: `npx expo start --web` on the laptop.
+3. Have the browser version ready too: `npx expo start --web` on the laptop.
+4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording.
 
 ## Fallback ladder (never depend on one path)
 
@@ -1463,15 +1548,15 @@ Independent prototype, not affiliated with WHOOP. Everything on screen is synthe
 
 ## Beat sheet
 
-The forecast is fixed at **Sat Sep 19 2026, 20:00 UTC** (after the Saturday soccer match), so the demo behaves the same every time.
+The forecast is fixed at **2026-09-19 20:00 UTC** (Saturday evening, after the soccer match; the app shows this in its "Forecast from" line), so the demo behaves the same every time.
 
 | Time | Beat | What you do in the app | What to say |
 |---|---|---|---|
 | 0:00 | The gap | Nothing on screen | Members ask for structured programs and less tedious strength tracking. Say this is an independent prototype on synthetic data. |
 | 0:25 | Replay a workout | Show the **Body map** tab. Point at `SYNTHETIC DATA` and the "Forecast from" line | It replays a week of workouts (runs, a hilly run, a soccer match, two strength sessions) so the demo never depends on a live connection. |
-| 0:50 | The heatmap and the why | On **Now** the glutes, quads, hamstrings and calves are **High**. Tap **Quads** and read the reasons (new for you, lengthening work). Toggle **Back** to see the hamstrings and calves. Drag the scrubber to **+1d**, **+3d**, **+5d** to watch it fade to moderate | The model follows the published soreness timeline and the novelty effect. The picture is a prediction, not a measurement. |
-| 1:20 | Check in and comfort ideas | On **Now**, open a sore muscle and tap a check-in: **None**, **Mild**, **Moderate** or **Severe**. Read the comfort ideas and their labels (**Range of motion**, **Comfort**) and the line that stretching has not been shown to reduce soreness | Recommendations are labelled by strength of evidence. Stretching helps range of motion, not soreness, so we say so. A severe report is acknowledged, with a line to stop and see a clinician if it is sharp, swollen or numb. |
-| 1:50 | The plan adapts | Go to the **Plan** tab. It asks about the untagged **Wed Sep 16 · Weightlifting** session. Tap **Upper body**. Answer the health questions: **None of these apply**, **Under 18: No**, **Medical condition: No**. Leave the defaults (Build muscle, 4 days, Gym) and tap **Build my plan** | Read the days: Sunday upper body with *fewer sets: chest, triceps and shoulders predicted sore*; Monday an easy day (legs predicted sore); Wednesday upper body; Thursday lower body with the back squat at fewer sets, a hip thrust and a reverse lunge chosen to go easy on the sore muscles. Every choice has its reason. To show the plan reacting, tag the session **Lower body** instead: Sunday's sets go back to "new for you, start light". |
+| 0:50 | The heatmap and the why | On **Now** the glutes, quads, hamstrings and calves are **High**. Tap **Quads** and read the reasons (new for you, lengthening work). Toggle **Back** to see the hamstrings and calves. Drag the scrubber: they stay High through **+3d**, ease to Moderate from **+4d** (the quads a day later, at **+5d**), and are gone by **+6d** | The picture is a prediction, not a measurement. The curve behind it is hand-tuned to the published shape of soreness over time, and the model counts new work and lengthening work for more. |
+| 1:20 | Check in and comfort ideas | Back on **Now**, tap **Quads** (High): the comfort ideas are Easy walk, Foam roll quads and Small leg swings, and the sheet says to save stretching for when soreness eases. Close it, tap **Chest** (Low) and check in **Moderate**: comfort ideas appear, and now a range-of-motion stretch (Doorway chest stretch). Read the line that stretching has not been shown to reduce soreness. The other check-in options are **None**, **Mild** and **Severe** | Recommendations are labelled by strength of evidence: **Range of motion** for stretches, **Comfort** for the rest. Stretching helps range of motion, not soreness, so we say so. A severe report is acknowledged, with a line to stop and see a clinician if it is sharp, swollen or numb. |
+| 1:50 | The plan, and it reacts | Go to the **Plan** tab. It asks about the untagged **Wed Sep 16 · Weightlifting** session: tap **Plan without these**. Tick **None of these apply**, tap **No** under **Are you under 18?** and **No** under the medical-condition question. Leave the defaults (Build muscle, 4 days, Gym) and tap **Build my plan**. Then go to **Body map**, tag that session **Upper body**, and come back to **Plan** | Read the days: a note that some workouts are not counted; Sunday upper body (*New for you: start light*); Monday an easy day (quads, glutes, hamstrings and calves predicted sore); Wednesday upper body; Thursday lower body with the back squat at fewer sets, a hip thrust and a reverse lunge chosen to go easy on the sore muscles. Every choice has its reason. After tagging, the plan has changed by itself: Sunday now says *Fewer sets: chest, triceps and shoulders predicted sore*, and the not-counted note is gone. This is the longest beat, so practise it. |
 | 2:20 | The guardrails | Tap **Change answers**, tick **Sharp or localized pain**, tap **Build my plan**: no plan, and a message to stop and see a clinician. Change answers, untick it, choose **None of these apply**, pick **6** days (or **Lose weight**): declined with a reason | Red flags stop the plan and are never presented as normal soreness. Requests outside the guardrails are declined and say why. Nothing builds until every question is answered. |
 | 2:40 | The evidence | Go to the **Evidence** tab. Show the soreness curve, then the stretching card, then **Where this stops** | The chart is the curve the model actually uses. The limits are on screen because they matter: not checked against real soreness logs, hand-set numbers, a trainer or physical therapist still to review the library. |
 | 2:55 | The ask | Nothing on screen | The data I would want: Strength Trainer sets, a soreness signal, Journal. |
@@ -1480,7 +1565,7 @@ The forecast is fixed at **Sat Sep 19 2026, 20:00 UTC** (after the Saturday socc
 
 | Safe to say | Do not say |
 |---|---|
-| "The model follows the published soreness time course and the novelty effect." | Any accuracy figure. There is no data behind one. |
+| "The curve is hand-tuned to the published shape of soreness over time, and the model uses the novelty effect." | Any accuracy figure. There is no data behind one. |
 | "Recommendations are labelled by strength of evidence." | That stretching prevents or relieves soreness. |
 | "I would check this against real soreness logs." | That it is clinically proven, or anything that implies diagnosis. |
 | "This is a wellness tool, not medical advice." | Any claim about blood flow or oxygen. |
@@ -1492,10 +1577,75 @@ The forecast is fixed at **Sat Sep 19 2026, 20:00 UTC** (after the Saturday socc
 - Run this whole sheet three times, on the phone and in the browser.
 ````
 
+Create `LICENSE`:
+
+```ts
+MIT License
+
+Copyright (c) 2026 Priyanshu Bhatt
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+Create `PRIVACY.md`:
+
+````md
+# Sore Spot Privacy Policy
+
+**Last updated:** September 19, 2026
+
+Sore Spot is an independent prototype built by me. It is **not affiliated with, endorsed by, or sponsored by WHOOP, Inc.** This policy explains what data the prototype accesses and how it is handled.
+
+## Who can use it
+Sore Spot is a personal, non-commercial prototype used by its developer to work with the developer's own WHOOP data. It is not offered to the general public.
+
+## What data it accesses
+When you authorize Sore Spot through WHOOP, it may read the following data from your WHOOP account, depending on the permissions (scopes) you approve:
+
+- **Workouts:** activity type, start/end time, strain, heart rate, heart-rate zone durations, distance, and altitude.
+- **Recovery:** recovery score, resting heart rate, heart rate variability, blood oxygen, and skin temperature.
+- **Sleep:** duration, stages, and performance.
+- **Cycles:** daily strain and heart rate.
+- **Body measurements:** height, weight, and maximum heart rate.
+
+Sore Spot does **not** request your name, email address, or profile information.
+
+## How the data is used
+The data is used only to estimate which muscle groups may feel sore after exercise and to suggest training and mobility activities. Sore Spot is a general wellness tool. It is **not a medical device and does not provide medical advice, diagnosis, or treatment.**
+
+## Where the data is stored
+Data is downloaded once to the developer's own computer and stored in local files. It is not uploaded to a server, sold, shared with third parties, or used for advertising or model training.
+
+## Retention and deletion
+Local copies are kept only for as long as needed for development and demonstration, and can be deleted at any time. You can revoke Sore Spot's access at any time from your WHOOP account settings, and you may ask the developer to delete any data held.
+
+## Security
+API credentials are kept out of the app and out of public code repositories. Data files are stored locally and are not published.
+
+## Changes
+If this policy changes, the "Last updated" date above will change.
+````
+
 - [ ] **Step 4: Run the whole suite and typecheck**
 
 Run: `npm test && npm run typecheck`
-Expected: 28 test files, 258 tests pass (the 247 after Task 2 plus 11); typecheck prints no errors.
+Expected: 28 test files, 265 tests pass (the 247 after Task 2 plus 18); typecheck prints no errors.
 
 - [ ] **Step 5: Prove the documentation tests can fail**
 
@@ -1506,7 +1656,7 @@ sed -i 's/It is \*\*not affiliated with, endorsed by, or sponsored by WHOOP, Inc
 npx vitest run app/docs.test.ts
 cp /tmp/readme.bak README.md
 cp docs/DEMO.md /tmp/demo.bak
-sed -i 's/fewer sets: chest, triceps and shoulders predicted sore/fewer sets: legs predicted sore/' docs/DEMO.md
+sed -i 's/Fewer sets: chest, triceps and shoulders predicted sore/Fewer sets: legs predicted sore/' docs/DEMO.md
 npx vitest run app/docs.test.ts
 cp /tmp/demo.bak docs/DEMO.md
 npx vitest run app/docs.test.ts
@@ -1516,7 +1666,7 @@ Expected: the first run FAILS (the README's first lines); the second FAILS ("mat
 - [ ] **Step 6: Commit**
 
 ```bash
-git add README.md docs/DEMO.md app/docs.test.ts
+git add README.md docs/DEMO.md LICENSE PRIVACY.md app/docs.test.ts
 git commit -m "$(cat <<'EOF'
 Add the README and the demo runbook, with tests tying the runbook to the engine
 
