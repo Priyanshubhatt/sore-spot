@@ -44,3 +44,7 @@ yarn-error.*
 .env
 data/replay.json
 *.token.json
+
+# Also ignore other dotenv files (from the original repository .gitignore)
+.env.*
+!.env.example
