@@ -29,9 +29,9 @@ describe('buildForecastState', () => {
 
   it('check-ins nudge sensitivity from the default, so repeating one never stacks', () => {
     const once = build({}, { chest: 3 });
-    const again = build({}, { chest: 3 });
-    expect(once.sensitivity.chest).toBeGreaterThan(1);
-    expect(again.sensitivity.chest).toBe(once.sensitivity.chest);
+    expect(once.sensitivity.chest).toBeCloseTo(1.1, 10);
+    // Rebuilt from the default each time: the same check-in after a tag change is still one nudge, not two.
+    expect(build({ 'd-wed-strength': 'upper' }, { chest: 3 }).sensitivity.chest).toBeLessThanOrEqual(1.1 + 1e-9);
     expect(build().sensitivity.chest).toBe(1);
   });
 });

@@ -43,7 +43,8 @@ describe('required lines stay wired into the plan screens', () => {
   it('frames the health screen with the engine prompt and asks every engine question', () => {
     const health = text('components/HealthQuestions.tsx');
     expect(health).toMatch(/{RED_FLAG_PROMPT}/);
-    expect(health).toMatch(/RED_FLAG_QUESTIONS\[flag\]/);
+    expect(health).toMatch(/accessibilityLabel={RED_FLAG_QUESTIONS\[flag\]}/);
+    expect(health).toMatch(/\$\{RED_FLAG_QUESTIONS\[flag\]\}/); // the visible text, not only the label
     expect(health).toMatch(/question={UNDER_18_QUESTION}/);
     expect(health).toMatch(/question={MEDICAL_CONDITION_QUESTION}/);
   });
@@ -68,6 +69,12 @@ describe('required lines stay wired into the plan screens', () => {
     expect(view.indexOf('{PLAN_DISCLAIMER}')).toBeGreaterThan(planBranch);
   });
 
+  it('derives the plan on every render, so a later tag or check-in can never leave a stale plan on screen', () => {
+    const screen = text('PlanScreen.tsx');
+    expect(screen).toMatch(/const result = built\s*\?/);
+    expect(screen).not.toMatch(/useState<[^>]*PlanResult/);
+  });
+
   it('runs the plan through the engine guardrails, never around them', () => {
     expect(text('planFlow.ts')).toMatch(/planOrGuardrail\(/);
     for (const f of files) expect(f.text, f.rel).not.toMatch(/buildPlan/);
@@ -85,6 +92,7 @@ describe('required lines stay wired into the plan screens', () => {
     expect(shell).toMatch(/tab !== 'plan' && styles\.hidden/);
     expect(shell).toMatch(/hidden: { display: 'none' }/);
     expect(shell).not.toMatch(BANNED);
+    expect(shell).not.toMatch(/buildPlan/);
   });
 });
 

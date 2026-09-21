@@ -43,6 +43,9 @@ describe('computePlan', () => {
     expect(result.plan.days.map((d) => d.kind)).toEqual([
       'training', 'easy', 'rest', 'training', 'training', 'rest', 'rest',
     ]);
+    expect(result.plan.days.map((d) => d.title)).toEqual([
+      'Upper body', 'Easy day', 'Rest day', 'Upper body', 'Lower body', 'Rest day', 'Rest day',
+    ]);
     expect(result.plan.notes).toContain(HISTORY_INCOMPLETE_NOTE);
   });
 
