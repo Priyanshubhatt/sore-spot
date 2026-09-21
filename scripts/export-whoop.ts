@@ -5,19 +5,12 @@ import { parseDays } from './whoop/args';
 import { waitForCallback } from './whoop/callback';
 import { callbackTarget, parseEnvFile, readWhoopEnv, redact } from './whoop/env';
 import { writePrivate } from './whoop/files';
+import { explainNetworkError } from './whoop/network';
 import { runExport } from './whoop/run';
 import { PRIVATE_FILES, assertGitIgnored, gitCheckIgnore } from './whoop/safety';
 
 // One-time export of your own WHOOP history to data/replay.json. Run: npm run export-whoop
 // It reads .env, signs you in through WHOOP in your browser, and never prints a secret or a token.
-
-/** A dropped connection, a timeout or a refused redirect would otherwise all read as "fetch failed". */
-function explainNetworkError(err: unknown): Error {
-  const e = err as { name?: string; message?: string; cause?: { code?: string; message?: string } };
-  if (e?.name === 'TimeoutError') return new Error('WHOOP did not answer within 30 seconds. Check the connection and run the export again.');
-  const why = e?.cause?.code ?? e?.cause?.message ?? e?.message ?? 'unknown';
-  return new Error(`Could not reach WHOOP (${String(why).slice(0, 80)}). Check the connection, and that nothing (a proxy or VPN) is redirecting the request.`);
-}
 
 function openBrowser(url: string): void {
   const [cmd, args] =

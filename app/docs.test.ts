@@ -98,7 +98,7 @@ describe('the README section on using your own WHOOP data', () => {
 
   it('tells the person to type the flag with -- through npm, and what a skipped record and old sessions mean', () => {
     expect(readme).toContain('npm run export-whoop -- --days 90');
-    expect(readme).toMatch(/only for the last 8 days/);
+    expect(readme).toMatch(/only for the last 37 days/);
     expect(readme).toMatch(/skips them, says how many and why/);
     expect(readme).toMatch(/asks only for workouts, recovery and a refresh token/);
   });

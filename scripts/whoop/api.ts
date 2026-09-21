@@ -69,7 +69,8 @@ export async function fetchAllPages(path: string, window: Window, ctx: ApiContex
         attempt++;
         continue;
       }
-      const said = redact(text, secrets).slice(0, 300);
+      // Printable text only: a block page or a hostile body must not put control codes in the terminal.
+      const said = redact(text, secrets).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 300);
       if (res.status === 401) {
         throw new WhoopHttpError(401, `WHOOP rejected the access token (HTTP 401). Run the export again to sign in.${said ? ` WHOOP said: ${said}` : ''}`);
       }

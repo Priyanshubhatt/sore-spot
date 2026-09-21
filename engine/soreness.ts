@@ -95,6 +95,12 @@ function weightsFor(w: TaggedWorkout): { weights: MuscleWeights; profile: SportP
   return { weights: profile.muscles, profile };
 }
 
+/**
+ * How long after it ends a strength session can still change a forecast: its own curve (192 h), plus the 28 days a later
+ * session looks back over for novelty, plus a day for a long session. Older untagged sessions are never asked about.
+ */
+export const TAG_RELEVANCE_HOURS = TIMECURVE_HORIZON_HOURS + NOVELTY_WINDOW_DAYS * 24 + 24;
+
 /** Keep only scored workouts that ended by asOf, and resolve them to muscles. */
 export function resolveSessions(workouts: TaggedWorkout[], asOf: Date): Resolved {
   const needsTag: string[] = [];
@@ -104,9 +110,11 @@ export function resolveSessions(workouts: TaggedWorkout[], asOf: Date): Resolved
     const endMs = Date.parse(w.end);
     if (w.score_state !== 'SCORED' || !w.score || endMs > asOf.getTime()) continue;
     const r = weightsFor(w);
-    // A session the curve has already run out for changes nothing, so an untagged or unmapped one is not worth reporting.
-    const stale = asOf.getTime() - endMs > TIMECURVE_HORIZON_HOURS * MS_PER_HOUR;
-    if ((r === 'needsTag' || r === 'unmapped') && stale) continue;
+    // An unmapped sport never enters `sessions`, so once its own curve has run out it changes nothing. An untagged strength
+    // session can still matter: once tagged it would be part of the history a recent session is compared with (novelty).
+    const age = asOf.getTime() - endMs;
+    if (r === 'unmapped' && age > TIMECURVE_HORIZON_HOURS * MS_PER_HOUR) continue;
+    if (r === 'needsTag' && age > TAG_RELEVANCE_HOURS * MS_PER_HOUR) continue;
     if (r === 'needsTag') {
       needsTag.push(w.id);
       continue;

@@ -83,6 +83,14 @@ describe('fetchAllPages', () => {
     expect(b.message).toMatch(/may lack the scope for it, or WHOOP may be blocking/);
   });
 
+  it('prints WHOOP\'s words without control codes', async () => {
+    const err = await failure(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(403, '\u001b[31mblocked\u001b[0m\r\nby policy\u0007')]).fetchFn)));
+    // eslint-disable-next-line no-control-regex
+    expect(err.message).not.toMatch(/[\u0000-\u001f\u007f]/);
+    expect(err.message).toMatch(/blocked/);
+    expect(err.message).toMatch(/by policy/);
+  });
+
   it('says who is asking, instead of sending the bare "node" agent string', async () => {
     const { fetchFn, calls } = scriptedFetch([respond(200, { records: [] })]);
     await fetchAllPages('/v2/recovery', window, ctx(fetchFn));

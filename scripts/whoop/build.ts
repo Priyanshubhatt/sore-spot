@@ -1,6 +1,6 @@
 import { parseReplay } from '../../engine/replay';
 import { SPORT_MUSCLE_MAP, STRENGTH_SPORTS, normalizeSport } from '../../engine/sportMuscleMap';
-import { TIMECURVE_HORIZON_HOURS } from '../../engine/timecurve';
+import { TAG_RELEVANCE_HOURS } from '../../engine/soreness';
 import type { ReplayFile } from '../../engine/types';
 
 export interface ExportInput {
@@ -37,10 +37,15 @@ export interface Skipped {
 }
 
 /** "Invalid replay file: workout 4f2a-...: start must be..." becomes "workout: start must be...". */
-const reasonOf = (err: unknown): string =>
-  (err instanceof Error ? err.message : String(err))
-    .replace(/^Invalid replay file: (workout|recovery) (?:cycle \d+|\S+): /, '$1: ')
-    .slice(0, 120);
+const reasonOf = (err: unknown, record: unknown): string => {
+  let text = err instanceof Error ? err.message : String(err);
+  // The record is in hand, so its own id text is removed literally, whatever it looks like.
+  const r = (record ?? {}) as { id?: unknown; cycle_id?: unknown; sleep_id?: unknown; session_tag?: unknown };
+  for (const own of [r.id, r.cycle_id, r.sleep_id, r.session_tag]) {
+    if (own !== undefined && own !== null && String(own).length > 0) text = text.split(String(own)).join('…');
+  }
+  return text.replace(/^Invalid replay file: (workout|recovery) \S+( \S+)?: /, '$1: ').slice(0, 120);
+};
 
 /**
  * Keeps the records the app can read and counts the rest. Real payloads are the one thing not checked against WHOOP
@@ -57,7 +62,7 @@ export function screenRecords(input: ExportInput): { input: ExportInput; skipped
         return true;
       } catch (err) {
         skipped[kind]++;
-        reasons.add(reasonOf(err));
+        reasons.add(reasonOf(err, r));
         return false;
       }
     });
@@ -96,12 +101,12 @@ export interface ExportSummary {
   from?: string;
   to?: string;
   sports: SportCount[];
-  /** Strength sessions that still shape the forecast (finished within its last {@link RECENT_HOURS} hours); older ones are never asked about. */
+  /** Strength sessions the app will ask about: scored ones that ended within {@link RECENT_HOURS} hours of the export. Older ones are never asked about. */
   strengthSessions: number;
 }
 
-/** Where the soreness curve reaches zero: a session older than this changes nothing, so it is never asked about. */
-export const RECENT_HOURS = TIMECURVE_HORIZON_HOURS;
+/** A strength session older than this can no longer change the forecast (see the engine), so it is never asked about. */
+export const RECENT_HOURS = TAG_RELEVANCE_HOURS;
 
 /** Without an export time (the synthetic week) everything counts as recent. */
 const isRecent = (end: string, asOf?: string): boolean => asOf === undefined || Date.parse(asOf) - Date.parse(end) <= RECENT_HOURS * 3_600_000;
@@ -124,7 +129,9 @@ export function summarize(replay: ReplayFile): ExportSummary {
     from: starts[0]?.slice(0, 10),
     to: starts[starts.length - 1]?.slice(0, 10),
     sports,
-    strengthSessions: replay.workouts.filter((w) => STRENGTH_SPORTS.has(normalizeSport(w.sport_name)) && isRecent(w.end, replay.asOf)).length,
+    strengthSessions: replay.workouts.filter(
+      (w) => STRENGTH_SPORTS.has(normalizeSport(w.sport_name)) && w.score_state === 'SCORED' && w.score && isRecent(w.end, replay.asOf),
+    ).length,
   };
 }
 
@@ -143,7 +150,7 @@ export function formatSummary(s: ExportSummary): string[] {
   );
   lines.push(
     s.strengthSessions > 0
-      ? `Strength sessions to tag in the app: ${s.strengthSessions} (only the last ${Math.round(RECENT_HOURS / 24)} days change the forecast)`
+      ? `Strength sessions to tag in the app: ${s.strengthSessions} (older than ${Math.floor(RECENT_HOURS / 24)} days no longer change the forecast, so they are not asked about)`
       : 'No strength sessions to tag.',
   );
   return lines;

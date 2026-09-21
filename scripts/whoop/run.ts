@@ -99,7 +99,7 @@ export async function runExport(deps: RunDeps): Promise<ExportSummary> {
   const { input, skipped } = screenRecords({ ...data, exportedAt: end });
   const because = skipped.reasons.length > 0 ? ` (${skipped.reasons.join('; ')})` : '';
   if (skipped.workouts + skipped.recovery > 0) {
-    deps.log(`Skipped ${skipped.workouts} workout and ${skipped.recovery} recovery records that were not in the shape this script expects${because}. The rest were kept.`);
+    deps.log(`Skipped records that were not in the shape this script expects: ${skipped.workouts} workout, ${skipped.recovery} recovery${because}. The rest were kept.`);
   }
   if (input.workouts.length === 0) {
     throw new Error(`None of the ${data.workouts.length} workout records were in a shape this script recognises${because}, so nothing was written. Paste this message back so the script can be fixed.`);

@@ -245,7 +245,7 @@ describe('runExport: failures', () => {
     expect(written).toHaveLength(1);
     expect(parseReplay(JSON.parse(written[0])).workouts).toHaveLength(good.length);
     const line = logs.find((l) => l.startsWith('Skipped')) ?? '';
-    expect(line).toMatch(/Skipped 1 workout and 1 recovery records/);
+    expect(line).toMatch(/Skipped records .*: 1 workout, 1 recovery/);
     expect(line).toMatch(/start must be an ISO date string/);
     expect(logs.join('\n')).not.toMatch(/aaaaaaaa|424242/);
   });

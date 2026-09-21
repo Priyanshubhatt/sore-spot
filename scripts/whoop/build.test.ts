@@ -74,18 +74,24 @@ describe('summarize and formatSummary', () => {
     expect(s.sports[0]).toMatchObject({ name: 'constructor', known: false });
   });
 
-  it('counts only the strength sessions the member will be asked to tag: those inside the last 8 days', () => {
+  it('counts only the strength sessions the member will be asked to tag: scored ones inside the last 37 days', () => {
     const lift = (id: string, end: string) => ({ ...(workouts.find((w) => (w as { sport_name: string }).sport_name === 'weightlifting') as object), id, start: end, end });
     const r = buildReplay({
-      workouts: [lift('recent', '2026-09-20T18:00:00Z'), lift('edge', '2026-09-14T08:00:00Z'), lift('old', '2026-09-13T07:00:00Z'), lift('older', '2026-08-01T07:00:00Z')],
+      workouts: [
+        lift('recent', '2026-09-20T18:00:00Z'),
+        lift('edge', '2026-08-16T09:00:00Z'), // 36.9 days before the export
+        lift('old', '2026-08-15T07:00:00Z'),
+        lift('older', '2026-07-01T07:00:00Z'),
+        { ...lift('pending', '2026-09-21T07:00:00Z'), score_state: 'PENDING_SCORE', score: undefined },
+      ],
       recovery: [],
       exportedAt: EXPORTED_AT,
     });
     const s = summarize(r);
     expect(s.strengthSessions).toBe(2);
     // Every strength session is still listed among the sports found.
-    expect(s.sports.find((x) => x.name === 'weightlifting')!.count).toBe(4);
-    expect(formatSummary(s).join('\n')).toMatch(/Strength sessions to tag in the app: 2 \(only the last 8 days change the forecast\)/);
+    expect(s.sports.find((x) => x.name === 'weightlifting')!.count).toBe(5);
+    expect(formatSummary(s).join('\n')).toMatch(/Strength sessions to tag in the app: 2 \(older than 37 days no longer change the forecast, so they are not asked about\)/);
   });
 
   it('counts every strength session when the replay has no export time', () => {
@@ -136,6 +142,16 @@ describe('screenRecords', () => {
     expect(skipped.recovery).toBe(1);
     // What is kept is what buildReplay accepts.
     expect(() => buildReplay(input)).not.toThrow();
+  });
+
+  it('removes the record\'s own id however it is spelled, not only when it looks like a UUID', () => {
+    const { skipped } = screenRecords({
+      workouts: [oddWorkout('id with spaces: and colon', { start: 'x' })],
+      recovery: [{ cycle_id: -5.5, created_at: 'x', score_state: 'SCORED' }],
+      exportedAt: EXPORTED_AT,
+    });
+    expect(skipped.reasons.join('|')).not.toMatch(/id with spaces|colon|5\.5/);
+    expect(skipped.reasons.join('|')).toMatch(/start must be an ISO date string/);
   });
 
   it('gives reasons that name the field but never an id, so the line is safe to paste back', () => {

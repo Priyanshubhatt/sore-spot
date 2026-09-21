@@ -84,7 +84,7 @@ describe('the export command line', () => {
   });
 
   it('turns a dropped connection, a timeout or a refused redirect into a sentence, not "fetch failed"', () => {
-    expect(cli).toContain('explainNetworkError(err)');
-    expect(cli).toMatch(/TimeoutError/);
+    expect(cli).toContain("import { explainNetworkError } from './whoop/network'");
+    expect(cli).toContain('throw explainNetworkError(err);');
   });
 });

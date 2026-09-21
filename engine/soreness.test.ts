@@ -5,7 +5,7 @@ import {
   unknownSport, untaggedStrength,
 } from '../data/scenarios/scenarios';
 import { defaultSensitivity } from './sensitivity';
-import { computeForecast, evaluateMuscles } from './soreness';
+import { TAG_RELEVANCE_HOURS, computeForecast, evaluateMuscles } from './soreness';
 import { MUSCLES, TaggedWorkout } from './types';
 
 const S = defaultSensitivity();
@@ -75,18 +75,35 @@ describe('computeForecast', () => {
     for (const day of f.byDay) for (const m of MUSCLES) expect(day[m].band).toBe('low');
   });
 
-  it('does not ask about an untagged or unmapped session the curve has already run out for', () => {
+  it('stops asking about an unmapped sport once its own curve has run out (192 h)', () => {
+    const unmapped = unknownSport;
+    const end = endOf(unmapped, 'curling');
+    expect(computeForecast(unmapped, plus(end, 191), S).unmappedSports).toEqual(['curling']);
+    expect(computeForecast(unmapped, plus(end, 193), S).unmappedSports).toEqual([]);
+  });
+
+  it('keeps asking about an untagged strength session for as long as it could be history for a recent one (37 days), then stops', () => {
     const end = endOf(untaggedStrength, 'untagged');
-    const unmapped = { ...unknownSport[0], id: 'old-unmapped' };
-    const both = [...untaggedStrength, unmapped];
-    const soon = computeForecast(both, plus(end, 191), S);
-    expect(soon.needsTag).toEqual(['untagged']);
-    const later = computeForecast(both, plus(end, 193), S);
-    expect(later.needsTag).toEqual([]);
-    expect(later.unmappedSports).toEqual([]);
-    // A tagged old session is unaffected: it is scored as before (it just contributes nothing any more).
-    const tagged = untaggedStrength.map((w) => ({ ...w, session_tag: 'upper' as const }));
-    expect(computeForecast(tagged, plus(end, 193), S).needsTag).toEqual([]);
+    // Past its own curve (192 h) it is still asked about: tagged, it would be compared against by a recent session.
+    expect(computeForecast(untaggedStrength, plus(end, 193), S).needsTag).toEqual(['untagged']);
+    expect(computeForecast(untaggedStrength, plus(end, 15 * 24), S).needsTag).toEqual(['untagged']);
+    expect(computeForecast(untaggedStrength, plus(end, TAG_RELEVANCE_HOURS - 1), S).needsTag).toEqual(['untagged']);
+    expect(computeForecast(untaggedStrength, plus(end, TAG_RELEVANCE_HOURS + 1), S).needsTag).toEqual([]);
+    expect(TAG_RELEVANCE_HOURS).toBe(37 * 24);
+  });
+
+  it('lets an old tagged session lower the novelty of a recent one, which is why the old one is still asked about', () => {
+    const lift = (id: string, start: string) => workout({ id, sport: 'weightlifting', start, zoneMinutes: [0, 10, 30, 15, 5, 0] });
+    const recent = { ...lift('recent', '2026-09-20T17:00:00Z'), session_tag: 'lower' as const };
+    const oldUntagged = lift('old', '2026-09-05T17:00:00Z'); // 15 days before the recent one
+    const at = plus(endOf([recent], 'recent'), 48);
+    const without = evaluateMuscles([recent], at, S);
+    const withOld = evaluateMuscles([recent, { ...oldUntagged, session_tag: 'lower' as const }], at, S);
+    expect(without.quads.drivers).toContain('novel');
+    expect(withOld.quads.drivers).not.toContain('novel');
+    expect(withOld.quads.score).toBeLessThan(without.quads.score);
+    // Left untagged, the old session is reported instead of silently dropped.
+    expect(computeForecast([recent, oldUntagged], at, S).needsTag).toEqual(['old']);
   });
 
   it('loads the right muscles for a tagged lower-body session', () => {
