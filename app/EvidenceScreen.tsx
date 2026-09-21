@@ -17,7 +17,8 @@ import { colors, radius, space, type } from './theme';
 /** What the model rests on, and where it stops. The limits card is part of the screen, not an extra. */
 export default function EvidenceScreen() {
   const { width } = useWindowDimensions();
-  const chartWidth = Math.min(width - 32 - 24, 360);
+  // Page padding (16) and the card's border (1) and padding (16), on each side.
+  const chartWidth = Math.min(width - 66, 360);
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{EVIDENCE_HEADING}</Text>

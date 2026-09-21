@@ -140,11 +140,17 @@ describe('the evidence tab and the accessibility state stay wired', () => {
 });
 
 describe('the look stays on the theme', () => {
-  it('uses theme tokens and never a hex colour in any screen or component', () => {
-    for (const f of files) {
+  it('uses theme tokens and never a hex or rgb colour in any screen, component or the shell', () => {
+    const shell = { rel: '../App.tsx', text: readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8') };
+    for (const f of [...files, shell]) {
       if (f.rel === 'theme.ts') continue;
-      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(/);
     }
+  });
+
+  it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {
+    expect(text('components/TabIcon.tsx')).toMatch(/<View aria-hidden>/);
+    expect(text('components/TabBar.tsx')).toMatch(/{TAB_LABELS\[t\]}/);
   });
 
   it('shows the independent-prototype line under the title, so a modern look never reads as an official app', () => {
@@ -155,7 +161,7 @@ describe('the look stays on the theme', () => {
   });
 
   it('shows the summary strip on the body map, and names the band in words beside every colour', () => {
-    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip /);
+    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip day={dayForecast} dayText={dayText} \/>/);
     expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);

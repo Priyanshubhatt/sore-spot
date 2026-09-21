@@ -11,6 +11,11 @@ describe('contrast helper', () => {
     expect(luminance('#000000')).toBe(0);
   });
 
+  it('gets a mid-tone right, so wrong luminance weights or gamma would fail (#777777 on white is about 4.48)', () => {
+    expect(contrastRatio('#777777', '#FFFFFF')).toBeCloseTo(4.48, 1);
+    expect(contrastRatio('#FF0000', '#000000')).toBeCloseTo(5.25, 1);
+  });
+
   it('is symmetric', () => {
     expect(contrastRatio('#123456', '#ABCDEF')).toBeCloseTo(contrastRatio('#ABCDEF', '#123456'), 10);
   });
@@ -62,6 +67,15 @@ describe('contrast of every pairing that carries text (WCAG AA, 4.5:1)', () => {
   it('reads the warning and banner text on the warning surface and on the page', () => {
     expect(contrastRatio(colors.warnText, colors.warnBg)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(colors.banner, colors.bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('reads the text colours on the tinted surfaces they are drawn on', () => {
+    expect(contrastRatio(colors.muted, colors.accentSoft)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(colors.dim, colors.accentFill)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(colors.text, colors.accentFill)).toBeGreaterThanOrEqual(4.5);
+    for (const surface of [colors.card, colors.raised, colors.warnBg]) {
+      expect(contrastRatio(colors.warnText, surface), `warn text on ${surface}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('draws the day scrubber label on the accent and the chart fill legibly', () => {

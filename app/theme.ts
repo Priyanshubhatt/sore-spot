@@ -27,6 +27,7 @@ export const colors = {
 
   bodyFill: '#262B31',
   selectedOutline: '#FFFFFF',
+  shadow: '#000000',
 
   warnBg: '#2A1D0B',
   warnBorder: '#5A3B0F',

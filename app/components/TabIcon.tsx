@@ -12,7 +12,7 @@ interface Props {
 /** Simple line icons drawn with SVG, so no icon package is needed. The tab's text label carries the meaning. */
 export default function TabIcon({ name, color, size = 22 }: Props) {
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View aria-hidden>
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
         {name === 'body' && (
           <>
