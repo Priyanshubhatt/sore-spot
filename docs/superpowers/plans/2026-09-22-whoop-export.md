@@ -3277,3 +3277,17 @@ EOF
 **Type consistency:** every name is defined once (Task 1, then Task 2, then Task 3) and used with the same signature, because all blocks come from one verified copy.
 
 **Known limits, stated plainly:** the script follows WHOOP's published documentation and is tested against a stand-in, not the real service; the sport map is unchanged until real sports are seen; Expo serves the replay file to the device that opens the app, so real data should stay on a private network.
+
+---
+
+## Addendum: what the final review changed after Tasks 1 to 3
+
+The code blocks above are the state at the end of Task 3 plus its first fix round. Two more rounds followed the whole-branch review (commits 08897b2 and 1de8459); the spec describes the result and the tests are the authority. In short:
+
+- **Sign-in catcher:** `localhost` binds both 127.0.0.1 and ::1 (`callback.ts`).
+- **Command line:** `scripts/whoop/args.ts` accepts only `--days N`; the documented form is `npm run export-whoop -- --days 90`. `scripts/whoop/network.ts` turns network failures into sentences.
+- **Unreadable records:** `screenRecords` (`build.ts`) checks each record alone, skips what the app could not read, and `run.ts` reports counts and id-free reasons; the run stops only if no workout remains.
+- **Old sessions:** `engine/soreness.ts` stops reporting an unmapped sport after 192 h and an untagged strength session after `TAG_RELEVANCE_HOURS` (192 h + the 28-day novelty window + a day = 37 days); the summary counts scored strength sessions inside that window.
+- **Labels:** `describeWorkout` uses the workout's `timezone_offset`.
+- **Errors:** 401/403 keep WHOOP's scrubbed words (control characters removed); an honest `user-agent` is sent; `asOf` must carry a time zone.
+- **Counts after all rounds:** 432 tests in 44 files (431 pass and one POSIX-only file-mode test is skipped on Windows).
