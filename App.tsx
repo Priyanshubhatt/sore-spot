@@ -6,6 +6,8 @@ import EvidenceScreen from './app/EvidenceScreen';
 import PlanScreen from './app/PlanScreen';
 import TabBar, { type Tab } from './app/components/TabBar';
 import { DISCLAIMER, SYNTHETIC_BANNER } from './app/copy';
+import { INDEPENDENT_LINE } from './app/planCopy';
+import { colors, space, type } from './app/theme';
 import { useSoreSpot } from './app/useSoreSpot';
 
 export default function App() {
@@ -17,6 +19,7 @@ export default function App() {
       {/* The label and the disclaimer sit outside the tabs, so they are always visible. */}
       <View style={styles.header}>
         <Text style={styles.title}>Sore Spot</Text>
+        <Text style={styles.independent}>{INDEPENDENT_LINE}</Text>
         {spot.replay.synthetic && <Text style={styles.banner}>{SYNTHETIC_BANNER}</Text>}
       </View>
 
@@ -35,18 +38,25 @@ export default function App() {
         <Text style={styles.note}>{DISCLAIMER}</Text>
       </View>
       <TabBar tab={tab} onChange={setTab} />
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FFFFFF' },
-  header: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 8, gap: 4 },
+  root: { flex: 1, backgroundColor: colors.bg },
+  header: { paddingTop: 56, paddingHorizontal: space.lg, paddingBottom: space.sm, gap: space.xs },
   tab: { flex: 1 },
   hidden: { display: 'none' },
-  footer: { paddingHorizontal: 16, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E3EAE8', backgroundColor: '#FFFFFF' },
-  title: { fontSize: 24, fontWeight: '700', color: '#16211F' },
-  banner: { color: '#B45309', fontWeight: '700' },
-  note: { fontSize: 12, color: '#5C6866' },
+  footer: {
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  title: { ...type.title },
+  independent: { ...type.small },
+  banner: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, color: colors.banner },
+  note: { ...type.small },
 });

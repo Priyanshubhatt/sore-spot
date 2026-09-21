@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { StrengthTag } from '../../engine';
 import { TAG_HEADING, TAG_LABELS, TAG_PROMPT } from '../copy';
 import { TAG_OPTIONS } from '../tagging';
+import { colors, radius, space, type } from '../theme';
 
 export interface UntaggedSession {
   id: string;
@@ -44,12 +45,19 @@ export default function TagPrompt({ sessions, onTag }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 6, padding: 12, borderRadius: 12, backgroundColor: '#F6F8F8', borderWidth: 1, borderColor: '#E3EAE8' },
-  heading: { fontSize: 14, fontWeight: '700', color: '#16211F' },
-  prompt: { fontSize: 12, color: '#5C6866' },
+  wrap: {
+    gap: 6,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  heading: { ...type.heading },
+  prompt: { ...type.small },
   session: { gap: 6, marginTop: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: '#26312F' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16, backgroundColor: '#E3EEEC' },
-  chipText: { fontSize: 13, fontWeight: '600', color: '#1E5F55' },
+  label: { ...type.strong },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  chip: { paddingVertical: space.sm, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: colors.accentSoft },
+  chipText: { fontSize: 13, fontWeight: '700', color: colors.accent },
 });

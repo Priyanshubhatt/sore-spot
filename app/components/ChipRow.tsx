@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Option } from '../planFlow';
+import { colors, radius, space, type } from '../theme';
 
 interface Props<T> {
   label: string;
@@ -37,10 +38,10 @@ export default function ChipRow<T extends string | number>({ label, options, val
 
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
-  label: { fontSize: 13, fontWeight: '600', color: '#26312F' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 18, backgroundColor: '#EEF1F2' },
-  chipOn: { backgroundColor: '#1E7A6C' },
-  chipText: { fontSize: 14, fontWeight: '600', color: '#26312F' },
-  chipTextOn: { color: '#FFFFFF' },
+  label: { ...type.label, color: colors.dim },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  chip: { paddingVertical: space.sm, paddingHorizontal: space.lg, borderRadius: radius.pill, backgroundColor: colors.raised },
+  chipOn: { backgroundColor: colors.accent },
+  chipText: { fontSize: 14, fontWeight: '700', color: colors.dim },
+  chipTextOn: { color: colors.onAccent },
 });

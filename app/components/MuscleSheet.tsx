@@ -4,6 +4,7 @@ import { BAND_LABELS, MUSCLE_LABELS, SAFETY_LINE, bandPhrase, reasonsFor } from 
 import { bandColor } from '../body/colors';
 import type { CheckInLevel } from '../checkin';
 import type { Recommendation } from '../mobility/recommend';
+import { colors, radius, space, type } from '../theme';
 import CheckInPicker from './CheckInPicker';
 import MoveList from './MoveList';
 
@@ -78,30 +79,30 @@ export default function MuscleSheet({
 const styles = StyleSheet.create({
   sheet: {
     position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
+    left: space.md,
+    right: space.md,
+    bottom: space.md,
     maxHeight: '65%',
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.raised,
     borderWidth: 1,
-    borderColor: '#D5DDDB',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+    borderColor: colors.border,
+    gap: space.sm,
+    shadowColor: colors.shadow,
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
   },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  swatch: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: '#B7C4C1' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  swatch: { width: 22, height: 22, borderRadius: 11 },
   headerText: { flex: 1 },
-  title: { fontSize: 17, fontWeight: '700', color: '#16211F' },
-  subtitle: { fontSize: 13, color: '#4B5856' },
-  close: { fontSize: 14, fontWeight: '600', color: '#1E7A6C', padding: 4 },
-  scrollContent: { gap: 12, paddingBottom: 4 },
-  reason: { fontSize: 14, color: '#26312F' },
-  band: { fontSize: 12, color: '#5C6866' },
-  safety: { fontSize: 12, fontWeight: '600', color: '#7A3B00' },
+  title: { ...type.heading, fontSize: 18 },
+  subtitle: { ...type.small },
+  close: { fontSize: 14, fontWeight: '700', color: colors.accent, padding: space.xs },
+  scrollContent: { gap: space.md, paddingBottom: space.xs },
+  reason: { ...type.body },
+  band: { ...type.small },
+  safety: { fontSize: 12, fontWeight: '600', color: colors.warnText },
 });

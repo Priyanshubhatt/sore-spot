@@ -139,6 +139,42 @@ describe('the evidence tab and the accessibility state stay wired', () => {
   });
 });
 
+describe('the look stays on the theme', () => {
+  it('uses theme tokens and never a hex or rgb colour in any screen, component or the shell', () => {
+    const shell = { rel: '../App.tsx', text: readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8') };
+    for (const f of [...files, shell]) {
+      if (f.rel === 'theme.ts') continue;
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(|hsla?\(|['"](white|black|transparent|red|green|blue|gray|grey)['"]/);
+    }
+  });
+
+  it('keeps the honesty caveat and the check-in question in sentence case, not in the small uppercase tag style', () => {
+    expect(text('components/MoveList.tsx')).toMatch(/heading: { \.\.\.type\.strong }/);
+    expect(text('components/CheckInPicker.tsx')).toMatch(/prompt: { \.\.\.type\.strong }/);
+  });
+
+  it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {
+    expect(text('components/TabIcon.tsx')).toMatch(/<View aria-hidden>/);
+    expect(text('components/TabBar.tsx')).toMatch(/{TAB_LABELS\[t\]}/);
+  });
+
+  it('shows the independent-prototype line under the title, so a modern look never reads as an official app', () => {
+    const shell = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8');
+    expect(shell).toMatch(/{INDEPENDENT_LINE}/);
+    expect(shell).toMatch(/<StatusBar style="light" \/>/);
+    expect(text('planCopy.ts')).toMatch(/not affiliated with WHOOP/);
+  });
+
+  it('shows the summary strip on the body map, and names the band in words beside every colour', () => {
+    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip day={dayForecast} dayText={dayText} \/>/);
+    expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    // The strip names what it counts, so "4 High" cannot be taken for a health or recovery score.
+    expect(text('components/SummaryStrip.tsx')).toMatch(/{SUMMARY_CAPTION}/);
+    expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);
+  });
+});
+
 describe('honesty scan over the app source', () => {
   it('found the app source files', () => {
     expect(files.length).toBeGreaterThanOrEqual(12);

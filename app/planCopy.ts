@@ -1,5 +1,8 @@
 export const TAB_LABELS = { body: 'Body map', plan: 'Plan', evidence: 'Evidence' } as const;
 
+/** Shown under the title on every screen. A modern look must never read as an official app. */
+export const INDEPENDENT_LINE = 'Independent prototype · not affiliated with WHOOP';
+
 export const PLAN_TAG_GATE_HEADING = 'Before we plan';
 export const PLAN_TAG_GATE_TEXT =
   'These strength sessions are not counted until you say which muscles they worked. Tagging them gives the plan a fuller picture of your week.';

@@ -1,10 +1,12 @@
 import type { RiskBand } from '../../engine';
+import { colors } from '../theme';
 
-// One sequential teal ramp so the map does not read as an alarm.
+// Traffic-light order: a dim green, amber and red. The legend and the sheet always name the band in
+// words too, and the three are kept apart by lightness as well as hue (see app/theme.test.ts).
 export const BAND_COLORS: Record<RiskBand, string> = {
-  low: '#E3EEEC',
-  moderate: '#7DBDB2',
-  high: '#1E7A6C',
+  low: colors.low,
+  moderate: colors.moderate,
+  high: colors.high,
 };
 
 export const BAND_ORDER: readonly RiskBand[] = ['low', 'moderate', 'high'];

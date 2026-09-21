@@ -11,12 +11,13 @@ import {
   type ChartBox,
 } from '../evidence';
 import { CURVE_A11Y, CURVE_PEAK_LABEL, CURVE_X_LABEL, CURVE_Y_LABEL } from '../evidenceCopy';
+import { colors } from '../theme';
 
-const LINE = '#1E7A6C';
-const FILL = '#D7EBE7';
-const AXIS = '#B7C4C1';
-const TEXT = '#4B5856';
-const HEIGHT = 182;
+const LINE = colors.accent;
+const FILL = colors.accentFill;
+const AXIS = colors.muted;
+const TEXT = colors.muted;
+const HEIGHT = 194;
 // SVG text does not inherit the app font on web, where it would fall back to a serif face.
 const FONT = Platform.select({ web: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', default: undefined });
 
@@ -26,7 +27,7 @@ interface Props {
 
 /** The engine's soreness curve, drawn as it is used: rising over the first day, peaking, then fading. */
 export default function TimeCurveChart({ width }: Props) {
-  const box: ChartBox = { width, height: HEIGHT, left: 12, right: 12, top: 34, bottom: 40 };
+  const box: ChartBox = { width, height: HEIGHT, left: 12, right: 12, top: 46, bottom: 40 };
   const series = curveSeries();
   const peak = peakOf(series);
   const baseline = yOf(0, box);
@@ -45,7 +46,7 @@ export default function TimeCurveChart({ width }: Props) {
           {CURVE_X_LABEL}
         </SvgText>
         <Circle cx={xOf(peak.hours, box)} cy={yOf(peak.level, box)} r={4.5} fill={LINE} />
-        <SvgText x={xOf(peak.hours, box) + 9} y={yOf(peak.level, box) + 4} fontFamily={FONT} fontSize={11} fill={TEXT}>
+        <SvgText x={xOf(peak.hours, box)} y={yOf(peak.level, box) - 10} fontFamily={FONT} fontSize={11} fill={TEXT} textAnchor="middle">
           {CURVE_PEAK_LABEL}
         </SvgText>
         <SvgText x={box.left} y={12} fontFamily={FONT} fontSize={11} fill={TEXT}>

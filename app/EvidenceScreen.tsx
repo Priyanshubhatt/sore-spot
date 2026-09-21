@@ -12,11 +12,13 @@ import {
   LIMITS_HEADING,
   TEXT_CARDS,
 } from './evidenceCopy';
+import { colors, radius, space, type } from './theme';
 
 /** What the model rests on, and where it stops. The limits card is part of the screen, not an extra. */
 export default function EvidenceScreen() {
   const { width } = useWindowDimensions();
-  const chartWidth = Math.min(width - 32 - 24, 360);
+  // Page padding (16) and the card's border (1) and padding (16), on each side.
+  const chartWidth = Math.min(width - 66, 360);
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{EVIDENCE_HEADING}</Text>
@@ -55,14 +57,21 @@ export default function EvidenceScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingTop: 8, gap: 12, paddingBottom: 32 },
-  heading: { fontSize: 20, fontWeight: '700', color: '#16211F' },
-  intro: { fontSize: 13, color: '#4B5856' },
-  card: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: '#F6F8F8', borderWidth: 1, borderColor: '#E3EAE8' },
-  cardHeading: { fontSize: 16, fontWeight: '700', color: '#16211F' },
-  body: { fontSize: 14, lineHeight: 20, color: '#26312F' },
-  limits: { backgroundColor: '#FFF7ED', borderColor: '#F3D9B5' },
-  limitsHeading: { fontSize: 16, fontWeight: '700', color: '#7A3E08' },
-  limitText: { fontSize: 14, lineHeight: 20, color: '#5B3A12' },
-  footnote: { fontSize: 12, color: '#5C6866' },
+  content: { padding: space.lg, paddingTop: space.sm, gap: space.md, paddingBottom: 32 },
+  heading: { ...type.title },
+  intro: { ...type.body },
+  card: {
+    gap: space.sm,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardHeading: { ...type.heading, fontSize: 17 },
+  body: { ...type.body },
+  limits: { backgroundColor: colors.warnBg, borderColor: colors.warnBorder },
+  limitsHeading: { ...type.heading, fontSize: 17, color: colors.warnText },
+  limitText: { fontSize: 14, lineHeight: 20, color: colors.warnText },
+  footnote: { ...type.small },
 });

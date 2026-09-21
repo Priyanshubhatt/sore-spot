@@ -14,6 +14,7 @@ import {
   toggleRedFlag,
   type Screening,
 } from '../screening';
+import { colors, radius, space, type } from '../theme';
 
 interface Props {
   screening: Screening;
@@ -64,7 +65,7 @@ export default function HealthQuestions({ screening, onChange }: Props) {
               aria-checked={on}
               style={[styles.flag, on && styles.flagOn]}
             >
-              <Text style={styles.flagText}>{`${on ? '☑' : '☐'}  ${RED_FLAG_QUESTIONS[flag]}`}</Text>
+              <Text style={[styles.flagText, on && styles.flagTextOn]}>{`${on ? '☑' : '☐'}  ${RED_FLAG_QUESTIONS[flag]}`}</Text>
             </Pressable>
           );
         })}
@@ -95,17 +96,32 @@ export default function HealthQuestions({ screening, onChange }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 12, padding: 12, borderRadius: 12, backgroundColor: '#F6F8F8', borderWidth: 1, borderColor: '#E3EAE8' },
-  heading: { fontSize: 16, fontWeight: '700', color: '#16211F' },
-  intro: { fontSize: 12, color: '#5C6866' },
-  block: { gap: 8 },
-  question: { fontSize: 14, fontWeight: '600', color: '#26312F' },
-  row: { flexDirection: 'row', gap: 8 },
-  flag: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5DEDC' },
-  flagOn: { borderColor: '#B45309', backgroundColor: '#FFF7ED' },
-  flagText: { fontSize: 14, color: '#26312F' },
-  chip: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 18, backgroundColor: '#EEF1F2' },
-  chipOn: { backgroundColor: '#1E7A6C' },
-  chipText: { fontSize: 14, fontWeight: '600', color: '#26312F' },
-  chipTextOn: { color: '#FFFFFF' },
+  wrap: {
+    gap: space.lg,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  heading: { ...type.heading, fontSize: 18 },
+  intro: { ...type.small },
+  block: { gap: space.sm },
+  question: { ...type.strong },
+  row: { flexDirection: 'row', gap: space.sm },
+  flag: {
+    paddingVertical: space.sm,
+    paddingHorizontal: 10,
+    borderRadius: radius.sm,
+    backgroundColor: colors.raised,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  flagOn: { borderColor: colors.warnText, backgroundColor: colors.warnBg },
+  flagText: { ...type.body },
+  flagTextOn: { color: colors.warnText },
+  chip: { alignSelf: 'flex-start', paddingVertical: space.sm, paddingHorizontal: space.lg, borderRadius: radius.pill, backgroundColor: colors.raised },
+  chipOn: { backgroundColor: colors.accent },
+  chipText: { fontSize: 14, fontWeight: '700', color: colors.dim },
+  chipTextOn: { color: colors.onAccent },
 });

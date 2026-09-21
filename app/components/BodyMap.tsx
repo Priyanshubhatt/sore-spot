@@ -2,11 +2,13 @@ import Svg, { Path } from 'react-native-svg';
 import type { DayForecast, Muscle } from '../../engine';
 import { zoneA11yLabel } from '../copy';
 import { bandColor } from '../body/colors';
+import { colors } from '../theme';
 import { BodySide, SILHOUETTE, VIEWBOX, ZONES, musclesInView } from '../body/zones';
 
-const BODY_FILL = '#EEF1F2';
-const OUTLINE = '#FFFFFF';
-const SELECTED_OUTLINE = '#0B2F2A';
+const BODY_FILL = colors.bodyFill;
+// Zone outlines match the page, so neighbouring zones read as separate; the selected one is outlined in white.
+const OUTLINE = colors.bg;
+const SELECTED_OUTLINE = colors.selectedOutline;
 
 interface Props {
   side: BodySide;
