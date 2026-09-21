@@ -1,7 +1,7 @@
 # Sore Spot: Evidence Tab, Accessibility Polish, README and Demo Runbook (Sub-project C2)
 
 **Date:** 2026-09-20
-**Status:** Defaults approved in chat; written spec and plan pending review
+**Status:** Built and reviewed on `feat/evidence-polish`; 258 tests
 **Builds on:** the plan screen (`2026-09-20-plan-screen-design.md`, branch `feat/plan-screen`), and through it the plan engine, B1 and B2.
 **Roadmap:** B1, B2, C1a, C1b (done) -> **C2 (this spec: Evidence tab, accessibility polish, README, demo runbook)** -> D (WHOOP export script).
 
@@ -58,11 +58,11 @@ README.md, docs/DEMO.md, app/docs.test.ts
 ## Testing and verification
 
 1. `evidence`: the series is the engine curve (0 to 192 hours, every 6), builds, peaks at 48 hours and ends at 0; axis ticks 0 to 8; chart geometry (padding, level 1 at the top, level 0 on the axis, one point per sample, the fill closes to the axis) (6 tests). Copy: unique non-empty cards; novelty numbers come from the engine constants; the stretching card says it is not a soreness fix and never that stretching reduces or relieves soreness; the label lines are the move list's own; every limit the pitch must own up to is present; the footnote is present (6 tests).
-2. Wiring tests in the honesty scan (3 more): the chart uses `curveSeries()` and the series uses `timecurve`; the screen renders every card, the label lines, the limits card and the footnote; selected and checked state uses `aria-*` and never `accessibilityState`. The shell test also requires the third tab mounted and hidden like the others.
+2. Wiring tests in the honesty scan (4 more): the chart uses `curveSeries()` and the series uses `timecurve`; the screen renders every card, the label lines, the limits card and the footnote; selected and checked state uses `aria-*` and never `accessibilityState`. The shell test also requires the third tab mounted and hidden like the others.
 3. `docs`: the README's first lines carry the not-affiliated and not-medical-advice statements, and it names the synthetic data, the limits, the data-handling rule and the three tabs; the runbook covers the ladder, every tab and the check-in labels, and its engine facts match the real output; banned-word and "reduce soreness" scans over both documents (11 tests).
-4. Suite: 257 tests in 28 files (231 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
+4. Suite: 258 tests in 28 files (231 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
 5. Browser drive (headless Edge, 390x844 and 375x667, 210 checks): everything the plan screen drive covers, updated for the new roles, plus: the Evidence tab and its hidden siblings; the chart is drawn, fits the width, labels its axes and peak, does not overlap labels and uses the sans-serif font; every card, the novelty numbers, the stretching card, all seven limits and the footnote are present; the banner, footer and tab bar stay in view (also scrolled); state attributes render (`None of these apply` and the chosen No report `aria-checked`, a ticked flag reports checked, tabs report selected, no button carries `aria-selected`, six radiogroups, seven checkboxes); no console errors.
-6. Mutation checks: each of 14 guards was broken on purpose and caught (the curve, the stretching honesty line, a limit, the footnote, the novelty numbers, the limits heading and list, the hidden third tab, the tab, chip and "none" aria props, the README statement and two runbook facts).
+6. Mutation checks: each of 22 guards was broken on purpose and caught (the curve, the stretching honesty line, a limit, the footnote, the novelty numbers, the limits heading and list, the hidden third tab, the tab, chip and "none" aria props, the README statement and two runbook facts).
 
 ## Risks
 

@@ -28,7 +28,7 @@ Every task's requirements include these, copied from the spec:
 
 **Line endings:** this repo's working tree has Windows line endings. For every file below marked "replace whole file", overwrite the entire file with the block shown using the file-writing tool. Do not use search-and-replace edits: multi-line matches silently fail on Windows line endings.
 
-**How these files were produced:** every block was first run in a scratch copy: 257 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and a 210-check headless-browser drive at 390x844 and 375x667 passing. Fourteen guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly.
+**How these files were produced:** every block was first run in a scratch copy: 258 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and a 210-check headless-browser drive at 390x844 and 375x667 passing. Twenty-two guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly.
 
 ## File Structure
 
@@ -152,7 +152,7 @@ describe('evidence copy', () => {
   it('never says stretching reduces or relieves soreness, and says it does not', () => {
     const stretching = TEXT_CARDS.find((c) => c.id === 'stretching')!;
     expect(stretching.heading).toMatch(/not a soreness fix/i);
-    expect(stretching.body).toMatch(/no meaningful effect on soreness/);
+    expect(stretching.body).toMatch(/no meaningful effect of stretching on soreness/);
     expect(stretching.body).toMatch(/hasn't been shown to reduce soreness/);
     for (const c of TEXT_CARDS) expect(c.body, c.id).not.toMatch(/(stretch\w*) (reduces|relieves|cures|eases) soreness/i);
   });
@@ -290,12 +290,12 @@ export const TEXT_CARDS: TextCard[] = [
   {
     id: 'eccentric',
     heading: 'Lowering and braking work',
-    body: 'Lengthening work, such as running downhill, slowing down or lowering a weight, causes far more soreness than lifting or pushing. The model weights it higher, and the plan keeps heavy lengthening work off muscles predicted to be sore.',
+    body: 'Lengthening work, such as running downhill, slowing down or lowering a weight, causes more soreness than lifting or pushing. The model weights it higher, and the plan keeps heavy lengthening work off muscles predicted to be sore.',
   },
   {
     id: 'stretching',
     heading: 'Stretching is not a soreness fix',
-    body: `Reviews of stretching before and after exercise (Herbert and colleagues, 2011; Dupuy and colleagues, 2018) found no meaningful effect on soreness. ${STRETCH_HONESTY} So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
+    body: `A review of stretching before and after exercise (Herbert and colleagues, 2011) and a wider review of recovery methods (Dupuy and colleagues, 2018) found no meaningful effect of stretching on soreness. ${STRETCH_HONESTY} So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
   },
   {
     id: 'easing-in',
@@ -313,7 +313,7 @@ export const LIMITS: string[] = [
   'The predictions have not been checked against real soreness logs. This app makes no claim about how often it is right.',
   'The numbers behind the model (weights, thresholds and the curve above) are set by hand, not fitted to data.',
   'Anything marked SYNTHETIC DATA is made up for the demo.',
-  'The low, medium and high recovery cutoffs are set by hand and have not been checked against WHOOP’s own zones.',
+  'The low, medium and high recovery cutoffs are set by hand and have not been checked against WHOOP\'s own zones.',
   'The exercise and comfort libraries are general guidance and still need review by a trainer or physical therapist.',
   'This is an independent prototype. It is not affiliated with, endorsed by, or sponsored by WHOOP.',
   'General wellness guidance, not medical advice. A red flag stops the plan and points to a clinician.',
@@ -492,8 +492,23 @@ describe('the evidence tab and the accessibility state stay wired', () => {
     expect(screen).toMatch(/<TimeCurveChart /);
   });
 
+  it('gives every single-choice group and checkbox its role and its checked state', () => {
+    const count = (rel: string, re: RegExp) => (text(rel).match(re) ?? []).length;
+    for (const rel of ['components/ChipRow.tsx', 'components/CheckInPicker.tsx', 'BodyMapScreen.tsx']) {
+      expect(count(rel, /accessibilityRole="radiogroup"/g), rel).toBe(1);
+      expect(count(rel, /accessibilityRole="radio"/g), rel).toBe(1);
+    }
+    expect(text('components/CheckInPicker.tsx')).toMatch(/aria-checked={level === l}/);
+    expect(text('BodyMapScreen.tsx')).toMatch(/aria-checked={side === s}/);
+    const health = 'components/HealthQuestions.tsx';
+    expect(count(health, /accessibilityRole="radiogroup"/g)).toBe(1);
+    expect(count(health, /accessibilityRole="radio"/g)).toBe(1);
+    expect(count(health, /accessibilityRole="checkbox"/g)).toBe(2); // the six flags and "None of these apply"
+    expect(text(health)).toMatch(/aria-checked={on}/);
+  });
+
   it('reports selected and checked with aria props, because react-native-web ignores accessibilityState for them', () => {
-    for (const f of files) expect(f.text, f.rel).not.toMatch(/accessibilityState=\{\{\s*(selected|checked)/);
+    for (const f of files) expect(f.text, f.rel).not.toMatch(/accessibilityState=\{\{[^}]*\b(selected|checked)\b/);
     expect(text('components/TabBar.tsx')).toMatch(/aria-selected={tab === t}/);
     expect(text('components/TabBar.tsx')).toMatch(/accessibilityRole="tab"/);
     expect(text('components/ChipRow.tsx')).toMatch(/aria-checked={on}/);
@@ -1172,7 +1187,7 @@ const styles = StyleSheet.create({
 - [ ] **Step 4: Run the whole suite, typecheck and the web export**
 
 Run: `npm test && npm run typecheck && npx expo export --platform web --output-dir /tmp/c2-export`
-Expected: 27 test files, 246 tests pass (the 243 after Task 1 plus 3 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/c2-export` and confirm `git status --short` shows only the ten files of this task.
+Expected: 27 test files, 247 tests pass (the 243 after Task 1 plus 4 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/c2-export` and confirm `git status --short` shows only the ten files of this task.
 
 - [ ] **Step 5: Prove the wiring tests can fail**
 
@@ -1480,7 +1495,7 @@ The forecast is fixed at **Sat Sep 19 2026, 20:00 UTC** (after the Saturday socc
 - [ ] **Step 4: Run the whole suite and typecheck**
 
 Run: `npm test && npm run typecheck`
-Expected: 28 test files, 257 tests pass (the 246 after Task 2 plus 11); typecheck prints no errors.
+Expected: 28 test files, 258 tests pass (the 247 after Task 2 plus 11); typecheck prints no errors.
 
 - [ ] **Step 5: Prove the documentation tests can fail**
 
