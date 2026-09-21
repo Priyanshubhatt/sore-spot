@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CHECKIN_LEVELS, type CheckInLevel } from '../checkin';
 import { CHECKIN_LABELS, CHECKIN_NOT_TODAY, CHECKIN_PROMPT } from '../copy';
+import { colors, radius, space, type } from '../theme';
 
 interface Props {
   /** Check-ins describe today, so the picker is only active on Now. */
@@ -38,13 +39,13 @@ export default function CheckInPicker({ enabled, level, message, onChange }: Pro
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 8 },
-  prompt: { fontSize: 14, fontWeight: '600', color: '#16211F' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 16, backgroundColor: '#EEF1F2' },
-  chipOn: { backgroundColor: '#1E7A6C' },
-  chipText: { fontSize: 13, fontWeight: '600', color: '#26312F' },
-  chipTextOn: { color: '#FFFFFF' },
-  message: { fontSize: 13, color: '#26312F' },
-  hint: { fontSize: 13, color: '#5C6866' },
+  wrap: { gap: space.sm },
+  prompt: { ...type.label, color: colors.dim },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  chip: { paddingVertical: space.sm, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.card },
+  chipOn: { backgroundColor: colors.accent },
+  chipText: { fontSize: 13, fontWeight: '700', color: colors.dim },
+  chipTextOn: { color: colors.onAccent },
+  message: { ...type.body },
+  hint: { ...type.small },
 });

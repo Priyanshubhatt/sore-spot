@@ -25,6 +25,7 @@ import {
   type PlanChoice,
 } from './planFlow';
 import { initialScreening, isAnswered, type Screening } from './screening';
+import { colors, radius, space, type } from './theme';
 import type { SoreSpot } from './useSoreSpot';
 
 interface Props {
@@ -95,7 +96,7 @@ export default function PlanScreen({ spot }: Props) {
             accessibilityState={{ disabled: !isAnswered(screening) }}
             style={[styles.primary, !isAnswered(screening) && styles.primaryOff]}
           >
-            <Text style={styles.primaryText}>{BUILD_PLAN}</Text>
+            <Text style={[styles.primaryText, !isAnswered(screening) && styles.primaryTextOff]}>{BUILD_PLAN}</Text>
           </Pressable>
           {!isAnswered(screening) && <Text style={styles.hint}>{BUILD_HINT}</Text>}
         </>
@@ -105,16 +106,24 @@ export default function PlanScreen({ spot }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, paddingTop: 8, gap: 12, paddingBottom: 32 },
-  gate: { gap: 4 },
-  gateHeading: { fontSize: 18, fontWeight: '700', color: '#16211F' },
-  gateText: { fontSize: 13, color: '#4B5856' },
-  request: { gap: 12, padding: 12, borderRadius: 12, backgroundColor: '#F6F8F8', borderWidth: 1, borderColor: '#E3EAE8' },
-  requestHeading: { fontSize: 16, fontWeight: '700', color: '#16211F' },
-  primary: { alignItems: 'center', paddingVertical: 14, borderRadius: 24, backgroundColor: '#1E7A6C' },
-  primaryOff: { backgroundColor: '#B7C4C1' },
-  primaryText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  secondary: { alignItems: 'center', paddingVertical: 12, borderRadius: 24, backgroundColor: '#EEF1F2' },
-  secondaryText: { fontSize: 15, fontWeight: '600', color: '#26312F' },
-  hint: { fontSize: 12, color: '#5C6866', textAlign: 'center' },
+  content: { padding: space.lg, paddingTop: space.sm, gap: space.md, paddingBottom: 32 },
+  gate: { gap: space.xs },
+  gateHeading: { ...type.title },
+  gateText: { ...type.body },
+  request: {
+    gap: space.lg,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  requestHeading: { ...type.heading, fontSize: 18 },
+  primary: { alignItems: 'center', paddingVertical: 15, borderRadius: radius.pill, backgroundColor: colors.accent },
+  primaryOff: { backgroundColor: colors.raised },
+  primaryText: { fontSize: 16, fontWeight: '800', letterSpacing: 0.4, color: colors.onAccent },
+  primaryTextOff: { color: colors.muted },
+  secondary: { alignItems: 'center', paddingVertical: 13, borderRadius: radius.pill, backgroundColor: colors.raised },
+  secondaryText: { fontSize: 15, fontWeight: '700', color: colors.text },
+  hint: { ...type.small, textAlign: 'center' },
 });

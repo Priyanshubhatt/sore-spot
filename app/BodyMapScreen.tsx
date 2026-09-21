@@ -6,10 +6,12 @@ import { hasMuscle, type BodySide } from './body/zones';
 import BodyMap from './components/BodyMap';
 import DayScrubber from './components/DayScrubber';
 import MuscleSheet from './components/MuscleSheet';
+import SummaryStrip from './components/SummaryStrip';
 import TagPrompt from './components/TagPrompt';
 import { BAND_LABELS, checkInFeedback, needsTagNote, unmappedNote } from './copy';
 import { recommend } from './mobility/recommend';
 import { dayLabel, weekdayLabel } from './scrubber';
+import { colors, radius, space, type } from './theme';
 import type { SoreSpot } from './useSoreSpot';
 
 const SIDES: readonly BodySide[] = ['front', 'back'];
@@ -27,7 +29,7 @@ export default function BodyMapScreen({ spot }: Props) {
   const [day, setDay] = useState(0);
   const [selected, setSelected] = useState<Muscle | null>(null);
 
-  const mapWidth = Math.min(screenWidth - 48, 260);
+  const mapWidth = Math.min(screenWidth - 48, 236);
   const dayForecast = forecast.byDay[day];
   const dayText = `${dayLabel(day)} (${weekdayLabel(asOf, day)})`;
   const selectedCheckIn = selected ? checkIns[selected] : undefined;
@@ -45,6 +47,8 @@ export default function BodyMapScreen({ spot }: Props) {
         <Text style={styles.asOf}>
           {`Forecast from ${asOf.toISOString().slice(0, 16).replace('T', ' ')} UTC`}
         </Text>
+
+        <SummaryStrip day={dayForecast} dayText={dayText} />
 
         <View accessibilityRole="radiogroup" accessibilityLabel="Body view" style={styles.toggle}>
           {SIDES.map((s) => (
@@ -123,23 +127,24 @@ export default function BodyMapScreen({ spot }: Props) {
 
 const styles = StyleSheet.create({
   body: { flex: 1 },
-  content: { padding: 16, paddingTop: 8, gap: 12 },
-  asOf: { fontSize: 13, color: '#4B5856' },
-  toggle: { flexDirection: 'row', gap: 8 },
-  toggleButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 18,
-    backgroundColor: '#EEF1F2',
+  content: { padding: space.lg, paddingTop: space.sm, gap: space.md },
+  asOf: { ...type.label },
+  toggle: {
+    flexDirection: 'row',
+    padding: 3,
+    borderRadius: radius.pill,
+    backgroundColor: colors.raised,
+    alignSelf: 'flex-start',
   },
-  toggleButtonOn: { backgroundColor: '#1E7A6C' },
-  toggleText: { fontWeight: '600', color: '#26312F' },
-  toggleTextOn: { color: '#FFFFFF' },
+  toggleButton: { paddingVertical: space.sm, paddingHorizontal: 22, borderRadius: radius.pill },
+  toggleButtonOn: { backgroundColor: colors.accent },
+  toggleText: { fontWeight: '700', color: colors.dim },
+  toggleTextOn: { color: colors.onAccent },
   mapWrap: { alignItems: 'center' },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  legendSwatch: { width: 16, height: 16, borderRadius: 8, borderWidth: 1, borderColor: '#B7C4C1' },
-  legendText: { fontSize: 13, color: '#26312F' },
-  note: { fontSize: 12, color: '#5C6866' },
+  legendSwatch: { width: 14, height: 14, borderRadius: 7 },
+  legendText: { ...type.small },
+  note: { ...type.small },
   spacer: { height: 220 },
 });

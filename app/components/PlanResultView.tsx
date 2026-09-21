@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PLAN_DISCLAIMER, type PlanResult } from '../../engine';
 import { BLOCKED_HEADING, NOTES_HEADING, PLAN_HEADING, WHY_HEADING } from '../planCopy';
 import { planDayHeading, setsAndReps } from '../planFlow';
+import { colors, radius, space, type } from '../theme';
 
 interface Props {
   result: PlanResult;
@@ -57,24 +58,45 @@ export default function PlanResultView({ result, asOf }: Props) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 12 },
-  heading: { fontSize: 18, fontWeight: '700', color: '#16211F' },
-  notes: { gap: 4, padding: 12, borderRadius: 12, backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#F3D9B5' },
-  notesHeading: { fontSize: 13, fontWeight: '700', color: '#7A3E08' },
-  noteText: { fontSize: 13, color: '#5B3A12' },
-  card: { gap: 6, padding: 12, borderRadius: 12, backgroundColor: '#F6F8F8', borderWidth: 1, borderColor: '#E3EAE8' },
-  cardRest: { backgroundColor: '#FFFFFF' },
-  cardDay: { fontSize: 12, fontWeight: '700', color: '#1E5F55' },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#16211F' },
-  exercise: { gap: 2, marginTop: 4 },
-  exerciseName: { fontSize: 14, fontWeight: '600', color: '#26312F' },
-  exerciseLine: { fontSize: 13, color: '#4B5856' },
-  exerciseNote: { fontSize: 12, color: '#7A3E08' },
+  wrap: { gap: space.md },
+  heading: { ...type.title },
+  notes: {
+    gap: space.xs,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.warnBg,
+    borderWidth: 1,
+    borderColor: colors.warnBorder,
+  },
+  notesHeading: { ...type.label, color: colors.warnText },
+  noteText: { fontSize: 13, lineHeight: 19, color: colors.warnText },
+  card: {
+    gap: 6,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardRest: { backgroundColor: colors.bg },
+  cardDay: { ...type.label, color: colors.accent },
+  cardTitle: { ...type.heading, fontSize: 18 },
+  exercise: { gap: 2, marginTop: space.xs },
+  exerciseName: { ...type.strong },
+  exerciseLine: { ...type.body },
+  exerciseNote: { fontSize: 12, color: colors.warnText },
   why: { gap: 2, marginTop: 6 },
-  whyHeading: { fontSize: 12, fontWeight: '700', color: '#4B5856' },
-  whyText: { fontSize: 12, color: '#5C6866' },
-  disclaimer: { fontSize: 12, color: '#5C6866' },
-  blocked: { gap: 6, padding: 14, borderRadius: 12, backgroundColor: '#FFF7ED', borderWidth: 1, borderColor: '#F3D9B5' },
-  blockedHeading: { fontSize: 16, fontWeight: '700', color: '#7A3E08' },
-  blockedText: { fontSize: 14, color: '#5B3A12' },
+  whyHeading: { ...type.label },
+  whyText: { ...type.small },
+  disclaimer: { ...type.small },
+  blocked: {
+    gap: 6,
+    padding: space.lg,
+    borderRadius: radius.md,
+    backgroundColor: colors.warnBg,
+    borderWidth: 1,
+    borderColor: colors.warnBorder,
+  },
+  blockedHeading: { ...type.heading, fontSize: 18, color: colors.warnText },
+  blockedText: { fontSize: 14, lineHeight: 20, color: colors.warnText },
 });

@@ -11,6 +11,7 @@ import {
 } from '../copy';
 import { evidenceFor, type EvidenceTag, type Move } from '../mobility/library';
 import type { Recommendation } from '../mobility/recommend';
+import { colors, space, type } from '../theme';
 
 interface SectionProps {
   heading: string;
@@ -52,25 +53,25 @@ export default function MoveList({ recommendation }: { recommendation: Recommend
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 12 },
+  wrap: { gap: space.md },
   section: { gap: 6 },
-  heading: { fontSize: 14, fontWeight: '700', color: '#16211F' },
-  evidenceNote: { fontSize: 12, color: '#5C6866' },
-  move: { gap: 2, paddingVertical: 4 },
-  moveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  moveName: { flex: 1, fontSize: 14, fontWeight: '600', color: '#26312F' },
+  heading: { ...type.label, color: colors.dim },
+  evidenceNote: { ...type.small },
+  move: { gap: 2, paddingVertical: space.xs },
+  moveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
+  moveName: { flex: 1, ...type.strong },
   tag: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#1E5F55',
-    backgroundColor: '#E3EEEC',
+    fontWeight: '700',
+    color: colors.accent,
+    backgroundColor: colors.accentSoft,
     paddingVertical: 2,
-    paddingHorizontal: 8,
+    paddingHorizontal: space.sm,
     borderRadius: 10,
     overflow: 'hidden',
   },
-  how: { fontSize: 13, color: '#26312F' },
-  dose: { fontSize: 12, color: '#5C6866' },
-  note: { fontSize: 13, color: '#26312F' },
-  small: { fontSize: 12, color: '#5C6866' },
+  how: { ...type.body },
+  dose: { ...type.small },
+  note: { ...type.body },
+  small: { ...type.small },
 });

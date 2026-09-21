@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from 'react-native';
 import { FORECAST_DAYS } from '../../engine/constants';
 import { dayIndexFromX, dayLabel, weekdayLabel } from '../scrubber';
+import { colors, radius } from '../theme';
 
 interface Props {
   asOf: Date;
@@ -54,15 +55,15 @@ export default function DayScrubber({ asOf, day, onChange }: Props) {
 const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
-    borderRadius: 10,
-    backgroundColor: '#EEF1F2',
+    borderRadius: radius.sm,
+    backgroundColor: colors.raised,
     overflow: 'hidden',
     // On web a drag would otherwise start a text selection, which cancels the pan.
     userSelect: 'none',
   },
-  cell: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  cellSelected: { backgroundColor: '#1E7A6C' },
-  label: { fontSize: 13, fontWeight: '600', color: '#26312F' },
-  weekday: { fontSize: 11, color: '#5C6866' },
-  labelSelected: { color: '#FFFFFF' },
+  cell: { flex: 1, alignItems: 'center', paddingVertical: 9 },
+  cellSelected: { backgroundColor: colors.accent },
+  label: { fontSize: 13, fontWeight: '700', color: colors.text },
+  weekday: { fontSize: 11, color: colors.muted },
+  labelSelected: { color: colors.onAccent },
 });

@@ -139,6 +139,29 @@ describe('the evidence tab and the accessibility state stay wired', () => {
   });
 });
 
+describe('the look stays on the theme', () => {
+  it('uses theme tokens and never a hex colour in any screen or component', () => {
+    for (const f of files) {
+      if (f.rel === 'theme.ts') continue;
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
+    }
+  });
+
+  it('shows the independent-prototype line under the title, so a modern look never reads as an official app', () => {
+    const shell = readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8');
+    expect(shell).toMatch(/{INDEPENDENT_LINE}/);
+    expect(shell).toMatch(/<StatusBar style="light" \/>/);
+    expect(text('planCopy.ts')).toMatch(/not affiliated with WHOOP/);
+  });
+
+  it('shows the summary strip on the body map, and names the band in words beside every colour', () => {
+    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip /);
+    expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);
+  });
+});
+
 describe('honesty scan over the app source', () => {
   it('found the app source files', () => {
     expect(files.length).toBeGreaterThanOrEqual(12);
