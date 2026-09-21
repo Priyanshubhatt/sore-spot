@@ -60,9 +60,31 @@ export interface TaggedWorkout extends Workout {
   session_tag?: StrengthTag;
 }
 
+/** WHOOP API v2 recovery shapes (developer.whoop.com/api, checked 2026-09-20). */
+export interface RecoveryScore {
+  user_calibrating: boolean;
+  recovery_score: number;
+  resting_heart_rate: number;
+  hrv_rmssd_milli: number;
+  spo2_percentage?: number;
+  skin_temp_celsius?: number;
+}
+
+export interface Recovery {
+  cycle_id: number;
+  sleep_id: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  score_state: 'SCORED' | 'PENDING_SCORE' | 'UNSCORABLE';
+  score?: RecoveryScore;
+}
+
 export interface ReplayFile {
   synthetic: boolean;
   workouts: TaggedWorkout[];
+  /** Optional: a real export adds it, and so does the synthetic week. */
+  recovery?: Recovery[];
 }
 
 export type Sensitivity = Record<Muscle, number>;

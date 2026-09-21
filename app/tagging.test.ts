@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import { syntheticReplay } from '../data/replay.synthetic';
+import { workout } from '../data/scenarios/builders';
+import { computeForecast, defaultSensitivity } from '../engine';
+import { TAG_OPTIONS, applyTags, describeWorkout } from './tagging';
+
+const wed = workout({
+  id: 'w1',
+  sport: 'weightlifting',
+  start: '2026-09-16T17:00:00Z',
+  zoneMinutes: [0, 10, 30, 15, 5, 0],
+});
+const run = workout({
+  id: 'w2',
+  sport: 'running',
+  start: '2026-09-17T07:00:00Z',
+  zoneMinutes: [0, 5, 20, 5, 0, 0],
+});
+
+describe('TAG_OPTIONS', () => {
+  it('lists the five session tags the engine understands', () => {
+    expect([...TAG_OPTIONS]).toEqual(['lower', 'upper', 'push', 'pull', 'full']);
+  });
+});
+
+describe('applyTags', () => {
+  it('sets the chosen tag on the matching workout and leaves the others alone', () => {
+    const out = applyTags([wed, run], { w1: 'upper' });
+    expect(out[0].session_tag).toBe('upper');
+    expect(out[1]).toBe(run);
+  });
+
+  it('does not mutate its inputs', () => {
+    const before = JSON.stringify([wed, run]);
+    applyTags([wed, run], { w1: 'lower' });
+    expect(JSON.stringify([wed, run])).toBe(before);
+    expect(wed.session_tag).toBeUndefined();
+  });
+
+  it('returns the same workouts when there are no tags', () => {
+    expect(applyTags([wed, run], {})).toEqual([wed, run]);
+  });
+
+  it('turns an untagged demo session from unknown into counted', () => {
+    const asOf = new Date('2026-09-19T20:00:00Z');
+    const s = defaultSensitivity();
+    const untagged = computeForecast(syntheticReplay.workouts, asOf, s);
+    expect(untagged.needsTag).toEqual(['d-wed-strength']);
+    expect(untagged.byDay[0].chest.band).toBe('low');
+
+    const tagged = computeForecast(applyTags(syntheticReplay.workouts, { 'd-wed-strength': 'upper' }), asOf, s);
+    expect(tagged.needsTag).toEqual([]);
+    expect(tagged.byDay[0].chest.band).not.toBe('low');
+  });
+});
+
+describe('describeWorkout', () => {
+  it('gives a UTC weekday, date and a readable sport', () => {
+    expect(describeWorkout(wed)).toBe('Wed Sep 16 · Weightlifting');
+  });
+
+  it('spaces hyphenated sport names', () => {
+    expect(describeWorkout({ start: '2026-09-18T07:00:00Z', sport_name: 'functional-fitness' })).toBe(
+      'Fri Sep 18 · Functional fitness',
+    );
+  });
+
+  it('uses UTC, so late evening stays on the same day', () => {
+    expect(describeWorkout({ start: '2026-09-16T23:30:00Z', sport_name: 'weightlifting' })).toBe(
+      'Wed Sep 16 · Weightlifting',
+    );
+  });
+});

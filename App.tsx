@@ -1,10 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
-import HelloScreen from './app/HelloScreen';
+import BodyMapScreen from './app/BodyMapScreen';
 
 export default function App() {
   return (
     <>
-      <HelloScreen />
+      <BodyMapScreen />
       <StatusBar style="auto" />
     </>
   );

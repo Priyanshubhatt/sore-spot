@@ -1,4 +1,4 @@
-import { ReplayFile, StrengthTag, TaggedWorkout } from './types';
+import { Recovery, ReplayFile, StrengthTag, TaggedWorkout } from './types';
 
 const TAGS: readonly StrengthTag[] = ['lower', 'upper', 'push', 'pull', 'full'];
 const ZONE_KEYS = [
@@ -46,6 +46,30 @@ function checkWorkout(w: unknown, i: number): TaggedWorkout {
   return o as unknown as TaggedWorkout;
 }
 
+const STATES = ['SCORED', 'PENDING_SCORE', 'UNSCORABLE'];
+
+function checkRecovery(r: unknown, i: number): Recovery {
+  const o = r as Record<string, unknown>;
+  const id = typeof o?.cycle_id === 'number' ? `cycle ${o.cycle_id}` : `#${i}`;
+  const bad = (why: string): never => {
+    throw new Error(`Invalid replay file: recovery ${id}: ${why}`);
+  };
+  if (typeof o !== 'object' || o === null) return bad('not an object');
+  if (typeof o.created_at !== 'string' || Number.isNaN(Date.parse(o.created_at))) {
+    bad('created_at must be an ISO date string');
+  }
+  if (!STATES.includes(o.score_state as string)) {
+    bad('score_state must be SCORED, PENDING_SCORE or UNSCORABLE');
+  }
+  if (o.score_state === 'SCORED') {
+    const score = (o.score as Record<string, unknown> | undefined)?.recovery_score;
+    if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > 100) {
+      bad('a SCORED recovery needs score.recovery_score between 0 and 100');
+    }
+  }
+  return o as unknown as Recovery;
+}
+
 /** Validate untrusted JSON (a real export or the synthetic file). Extra keys are ignored. */
 export function parseReplay(raw: unknown): ReplayFile {
   const o = raw as Record<string, unknown> | null;
@@ -54,5 +78,8 @@ export function parseReplay(raw: unknown): ReplayFile {
     throw new Error('Invalid replay file: "synthetic" must be true or false');
   }
   if (!Array.isArray(o.workouts)) throw new Error('Invalid replay file: "workouts" must be an array');
-  return { synthetic: o.synthetic, workouts: o.workouts.map(checkWorkout) };
+  const workouts = o.workouts.map(checkWorkout);
+  if (o.recovery === undefined) return { synthetic: o.synthetic, workouts };
+  if (!Array.isArray(o.recovery)) throw new Error('Invalid replay file: "recovery" must be an array');
+  return { synthetic: o.synthetic, workouts, recovery: o.recovery.map(checkRecovery) };
 }
