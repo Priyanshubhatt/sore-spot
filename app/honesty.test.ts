@@ -90,9 +90,37 @@ describe('required lines stay wired into the plan screens', () => {
     expect(shell).toMatch(/<PlanScreen spot={spot} \/>/);
     expect(shell).toMatch(/tab !== 'body' && styles\.hidden/);
     expect(shell).toMatch(/tab !== 'plan' && styles\.hidden/);
+    expect(shell).toMatch(/<EvidenceScreen \/>/);
+    expect(shell).toMatch(/tab !== 'evidence' && styles\.hidden/);
     expect(shell).toMatch(/hidden: { display: 'none' }/);
     expect(shell).not.toMatch(BANNED);
     expect(shell).not.toMatch(/buildPlan/);
+  });
+});
+
+describe('the evidence tab and the accessibility state stay wired', () => {
+  it('draws the engine curve, not a hand-drawn one', () => {
+    expect(text('components/TimeCurveChart.tsx')).toMatch(/curveSeries\(\)/);
+    expect(text('evidence.ts')).toMatch(/timecurve\(hours\)/);
+  });
+
+  it('shows every text card, the label lines, the limits card and the footnote on the evidence screen', () => {
+    const screen = text('EvidenceScreen.tsx');
+    expect(screen).toMatch(/TEXT_CARDS\.map\(/);
+    expect(screen).toMatch(/LABEL_LINES\.map\(/);
+    expect(screen).toMatch(/{LIMITS_HEADING}/);
+    expect(screen).toMatch(/LIMITS\.map\(/);
+    expect(screen).toMatch(/{EVIDENCE_FOOTNOTE}/);
+    expect(screen).toMatch(/<TimeCurveChart /);
+  });
+
+  it('reports selected and checked with aria props, because react-native-web ignores accessibilityState for them', () => {
+    for (const f of files) expect(f.text, f.rel).not.toMatch(/accessibilityState=\{\{\s*(selected|checked)/);
+    expect(text('components/TabBar.tsx')).toMatch(/aria-selected={tab === t}/);
+    expect(text('components/TabBar.tsx')).toMatch(/accessibilityRole="tab"/);
+    expect(text('components/ChipRow.tsx')).toMatch(/aria-checked={on}/);
+    expect(text('components/HealthQuestions.tsx')).toMatch(/aria-checked={none}/);
+    expect(text('components/HealthQuestions.tsx')).toMatch(/aria-checked={value === answer}/);
   });
 });
 

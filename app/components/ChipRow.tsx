@@ -13,7 +13,7 @@ export default function ChipRow<T extends string | number>({ label, options, val
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.row}>
+      <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.row}>
         {options.map((option) => {
           const on = option.value === value;
           return (
@@ -21,9 +21,9 @@ export default function ChipRow<T extends string | number>({ label, options, val
               key={String(option.value)}
               onPress={() => onChange(option.value)}
               hitSlop={4}
-              accessibilityRole="button"
+              accessibilityRole="radio"
               accessibilityLabel={`${label}: ${option.label}`}
-              accessibilityState={{ selected: on }}
+              aria-checked={on}
               style={[styles.chip, on && styles.chipOn]}
             >
               <Text style={[styles.chipText, on && styles.chipTextOn]}>{option.label}</Text>

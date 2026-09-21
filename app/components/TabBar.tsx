@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { TAB_LABELS } from '../planCopy';
 
 export type Tab = keyof typeof TAB_LABELS;
-export const TABS: readonly Tab[] = ['body', 'plan'];
+export const TABS: readonly Tab[] = ['body', 'plan', 'evidence'];
 
 interface Props {
   tab: Tab;
@@ -11,13 +11,13 @@ interface Props {
 
 export default function TabBar({ tab, onChange }: Props) {
   return (
-    <View style={styles.bar}>
+    <View accessibilityRole="tablist" style={styles.bar}>
       {TABS.map((t) => (
         <Pressable
           key={t}
           onPress={() => onChange(t)}
-          accessibilityRole="button"
-          accessibilityState={{ selected: tab === t }}
+          accessibilityRole="tab"
+          aria-selected={tab === t}
           style={[styles.tab, tab === t && styles.tabOn]}
         >
           <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{TAB_LABELS[t]}</Text>

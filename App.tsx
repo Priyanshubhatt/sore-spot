@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import BodyMapScreen from './app/BodyMapScreen';
+import EvidenceScreen from './app/EvidenceScreen';
 import PlanScreen from './app/PlanScreen';
 import TabBar, { type Tab } from './app/components/TabBar';
 import { DISCLAIMER, SYNTHETIC_BANNER } from './app/copy';
@@ -25,6 +26,9 @@ export default function App() {
       </View>
       <View style={[styles.tab, tab !== 'plan' && styles.hidden]}>
         <PlanScreen spot={spot} />
+      </View>
+      <View style={[styles.tab, tab !== 'evidence' && styles.hidden]}>
+        <EvidenceScreen />
       </View>
 
       <View style={styles.footer}>

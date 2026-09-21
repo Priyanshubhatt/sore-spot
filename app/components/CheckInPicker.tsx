@@ -16,14 +16,14 @@ export default function CheckInPicker({ enabled, level, message, onChange }: Pro
   return (
     <View style={styles.wrap}>
       <Text style={styles.prompt}>{CHECKIN_PROMPT}</Text>
-      <View style={styles.row}>
+      <View accessibilityRole="radiogroup" accessibilityLabel={CHECKIN_PROMPT} style={styles.row}>
         {CHECKIN_LEVELS.map((l) => (
           <Pressable
             key={l}
             onPress={() => onChange(l)}
             hitSlop={4}
-            accessibilityRole="button"
-            accessibilityState={{ selected: level === l }}
+            accessibilityRole="radio"
+            aria-checked={level === l}
             style={[styles.chip, level === l && styles.chipOn]}
           >
             <Text style={[styles.chipText, level === l && styles.chipTextOn]}>

@@ -46,13 +46,13 @@ export default function BodyMapScreen({ spot }: Props) {
           {`Forecast from ${asOf.toISOString().slice(0, 16).replace('T', ' ')} UTC`}
         </Text>
 
-        <View style={styles.toggle}>
+        <View accessibilityRole="radiogroup" accessibilityLabel="Body view" style={styles.toggle}>
           {SIDES.map((s) => (
             <Pressable
               key={s}
               onPress={() => chooseSide(s)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: side === s }}
+              accessibilityRole="radio"
+              aria-checked={side === s}
               style={[styles.toggleButton, side === s && styles.toggleButtonOn]}
             >
               <Text style={[styles.toggleText, side === s && styles.toggleTextOn]}>

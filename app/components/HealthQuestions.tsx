@@ -24,15 +24,15 @@ function YesNo({ question, value, onAnswer }: { question: string; value: boolean
   return (
     <View style={styles.block}>
       <Text style={styles.question}>{question}</Text>
-      <View style={styles.row}>
+      <View accessibilityRole="radiogroup" accessibilityLabel={question} style={styles.row}>
         {[true, false].map((answer) => (
           <Pressable
             key={String(answer)}
             onPress={() => onAnswer(answer)}
             hitSlop={4}
-            accessibilityRole="button"
+            accessibilityRole="radio"
             accessibilityLabel={`${question} ${answer ? YES : NO}`}
-            accessibilityState={{ selected: value === answer }}
+            aria-checked={value === answer}
             style={[styles.chip, value === answer && styles.chipOn]}
           >
             <Text style={[styles.chipText, value === answer && styles.chipTextOn]}>{answer ? YES : NO}</Text>
@@ -61,7 +61,7 @@ export default function HealthQuestions({ screening, onChange }: Props) {
               onPress={() => onChange(toggleRedFlag(screening, flag))}
               accessibilityRole="checkbox"
               accessibilityLabel={RED_FLAG_QUESTIONS[flag]}
-              accessibilityState={{ checked: on }}
+              aria-checked={on}
               style={[styles.flag, on && styles.flagOn]}
             >
               <Text style={styles.flagText}>{`${on ? '☑' : '☐'}  ${RED_FLAG_QUESTIONS[flag]}`}</Text>
@@ -71,8 +71,9 @@ export default function HealthQuestions({ screening, onChange }: Props) {
         <Pressable
           onPress={() => onChange(answerNoRedFlags(screening))}
           hitSlop={4}
-          accessibilityRole="button"
-          accessibilityState={{ selected: none }}
+          accessibilityRole="checkbox"
+          accessibilityLabel={NONE_OF_THESE}
+          aria-checked={none}
           style={[styles.chip, none && styles.chipOn]}
         >
           <Text style={[styles.chipText, none && styles.chipTextOn]}>{NONE_OF_THESE}</Text>
