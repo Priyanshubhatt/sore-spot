@@ -1,7 +1,7 @@
 # Sore Spot: Dark, WHOOP-Inspired Restyle (Sub-project UI)
 
 **Date:** 2026-09-21
-**Status:** Look approved in chat from before/after screenshots; written spec and plan pending review
+**Status:** Built and reviewed on `feat/ui-restyle`; 288 tests
 **Builds on:** everything merged to `master` (engine, body map, check-ins, plan, evidence, docs).
 **Roadmap:** B1, B2, C1a, C1b, C2 (done, merged) -> **UI (this spec: restyle)** -> D (WHOOP export script).
 
@@ -20,7 +20,7 @@ The look is inspired by dark fitness apps in general and **borrows nothing that 
 ## Behavior
 
 ### Theme (`app/theme.ts`)
-The one place the look is defined. Screens use tokens, never hex codes; a test scans every screen and component for a hex literal.
+The one place the look is defined. Screens use tokens, never hex codes; a test scans every screen, component and the shell for a hex or rgb(a) colour (three-digit hex included).
 
 | Token | Value | Use |
 |---|---|---|
@@ -62,13 +62,13 @@ app/honesty.test.ts                                   + look wiring tests       
 
 ## Testing and verification
 
-1. `theme`: the contrast helper (21:1 for black on white, symmetric); every token is a six-digit hex; the theme is dark (bg < card < raised < muted < text in luminance); scales increase; type presets use only text tokens; every contrast pairing above (14 tests).
+1. `theme`: the contrast helper (21:1 for black on white, symmetric); every token is a six-digit hex; a mid-tone value pins the WCAG luminance and gamma maths; the theme is dark (bg < card < raised < muted < text in luminance); scales increase; type presets use only text tokens; every contrast pairing above, including the text on the tinted surfaces (16 tests).
 2. `summary`: bands sorted into buckets in engine order, every muscle in exactly one bucket; the demo week's counts (4-0-8 now, 4-1-7 tomorrow, 1-4-7 at +4d, 0-0-12 at +6d); no mutation; the spoken label with correct plurals (4 tests). `colors`: order, distinct hex, taken from the theme (3 tests).
-3. Wiring in the honesty scan (3 more): no hex literal in any screen or component; the shell renders `{INDEPENDENT_LINE}` and a light status bar, and the line says "not affiliated with WHOOP"; the body map renders the summary strip with the band named in words beside each colour, and the strip carries its spoken label. The existing scans (banned words, "reduce/relieve/ease soreness") cover every new file.
-4. Suite: 285 tests in 30 files (265 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
-5. Browser drive (headless Edge, 390x844 and 375x667, 210 checks): the whole existing drive passes unchanged on the restyled app (behavior, roles, aria state, footer and tab bar in view, chart labels and font, the evidence cards and limits, no console errors).
+3. Wiring in the honesty scan (4 more): no hex or rgb colour in any screen, component or the shell; the decorative tab icons are `aria-hidden` on every platform and the label stays; the shell renders `{INDEPENDENT_LINE}` and a light status bar, and the line says "not affiliated with WHOOP"; the body map renders the summary strip with its `day` and `dayText` props and the band named in words beside each colour, and the strip carries its spoken label. The existing scans (banned words, "reduce/relieve/ease soreness") cover every new file.
+4. Suite: 288 tests in 30 files (265 before). `npm run typecheck` clean. `npx expo export --platform web` builds.
+5. Browser drive (headless Edge, 390x844 and 375x667, 214 checks): the whole existing drive passes unchanged on the restyled app (behavior, roles, aria state, footer and tab bar in view, chart labels and font, the evidence cards and limits, no console errors).
 6. Screenshots: the same 19 screens captured from the old and the new build, for review.
-7. Mutation checks: 13 guards broken on purpose and caught (a hex literal in a component, the independent line, the light status bar, the summary strip and its spoken label and band words, an unreadable muted colour, two bands made alike, unreadable dark-on-accent text, an invisible selection outline, the copy of the independent line, a swapped band in `summarize`, a band taking the wrong colour).
+7. Mutation checks: 22 guards broken on purpose and caught (a hex literal in a component, the independent line, the light status bar, the summary strip and its spoken label and band words, an unreadable muted colour, two bands made alike, unreadable dark-on-accent text, an invisible selection outline, the copy of the independent line, a swapped band in `summarize`, a band taking the wrong colour).
 
 ## Risks
 

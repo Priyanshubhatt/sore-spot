@@ -28,7 +28,7 @@ Every task's requirements include these, copied from the spec:
 
 **Line endings:** this repo's working tree has Windows line endings. For every file below marked "replace whole file", overwrite the entire file with the block shown using the file-writing tool. Do not use search-and-replace edits: multi-line matches silently fail on Windows line endings.
 
-**How these files were produced:** every block was first run in a scratch copy: 285 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and the existing 210-check headless-browser drive at 390x844 and 375x667 passing on the restyled app. Thirteen guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
+**How these files were produced:** every block was first run in a scratch copy: 288 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, and the existing 210-check headless-browser drive at 390x844 and 375x667 passing on the restyled app (214 checks with two added for the icons and the chart width). Twenty-two guards were mutation-checked (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
 
 ## File Structure
 
@@ -84,6 +84,11 @@ describe('contrast helper', () => {
     expect(luminance('#000000')).toBe(0);
   });
 
+  it('gets a mid-tone right, so wrong luminance weights or gamma would fail (#777777 on white is about 4.48)', () => {
+    expect(contrastRatio('#777777', '#FFFFFF')).toBeCloseTo(4.48, 1);
+    expect(contrastRatio('#FF0000', '#000000')).toBeCloseTo(5.25, 1);
+  });
+
   it('is symmetric', () => {
     expect(contrastRatio('#123456', '#ABCDEF')).toBeCloseTo(contrastRatio('#ABCDEF', '#123456'), 10);
   });
@@ -135,6 +140,15 @@ describe('contrast of every pairing that carries text (WCAG AA, 4.5:1)', () => {
   it('reads the warning and banner text on the warning surface and on the page', () => {
     expect(contrastRatio(colors.warnText, colors.warnBg)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(colors.banner, colors.bg)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('reads the text colours on the tinted surfaces they are drawn on', () => {
+    expect(contrastRatio(colors.muted, colors.accentSoft)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(colors.dim, colors.accentFill)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(colors.text, colors.accentFill)).toBeGreaterThanOrEqual(4.5);
+    for (const surface of [colors.card, colors.raised, colors.warnBg]) {
+      expect(contrastRatio(colors.warnText, surface), `warn text on ${surface}`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('draws the day scrubber label on the accent and the chart fill legibly', () => {
@@ -307,6 +321,7 @@ export const colors = {
 
   bodyFill: '#262B31',
   selectedOutline: '#FFFFFF',
+  shadow: '#000000',
 
   warnBg: '#2A1D0B',
   warnBorder: '#5A3B0F',
@@ -416,7 +431,7 @@ export const WHY_HEADING = 'Why';
 - [ ] **Step 4: Run the whole suite and typecheck**
 
 Run: `npm test && npm run typecheck`
-Expected: 30 test files, 282 tests pass (the 265 existing, minus the 4 old colour tests, plus 14 theme, 4 summary and 3 colour tests); typecheck prints no errors. The screens still use their old hex colours at this point, which is fine.
+Expected: 30 test files, 284 tests pass (the 265 existing, minus the 4 old colour tests, plus 16 theme, 4 summary and 3 colour tests); typecheck prints no errors. The screens still use their old hex colours at this point, which is fine.
 
 - [ ] **Step 5: Prove the guards can fail**
 
@@ -611,11 +626,17 @@ describe('the evidence tab and the accessibility state stay wired', () => {
 });
 
 describe('the look stays on the theme', () => {
-  it('uses theme tokens and never a hex colour in any screen or component', () => {
-    for (const f of files) {
+  it('uses theme tokens and never a hex or rgb colour in any screen, component or the shell', () => {
+    const shell = { rel: '../App.tsx', text: readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8') };
+    for (const f of [...files, shell]) {
       if (f.rel === 'theme.ts') continue;
-      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(/);
     }
+  });
+
+  it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {
+    expect(text('components/TabIcon.tsx')).toMatch(/<View aria-hidden>/);
+    expect(text('components/TabBar.tsx')).toMatch(/{TAB_LABELS\[t\]}/);
   });
 
   it('shows the independent-prototype line under the title, so a modern look never reads as an official app', () => {
@@ -626,7 +647,7 @@ describe('the look stays on the theme', () => {
   });
 
   it('shows the summary strip on the body map, and names the band in words beside every colour', () => {
-    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip /);
+    expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip day={dayForecast} dayText={dayText} \/>/);
     expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);
@@ -656,7 +677,7 @@ describe('honesty scan over the app source', () => {
 - [ ] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run app/honesty.test.ts`
-Expected: FAIL. The new "the look stays on the theme" tests fail: the screens still contain hex colours, the shell has no `{INDEPENDENT_LINE}` and no light status bar, and the body map has no summary strip. The older honesty tests still pass. Paste the real output.
+Expected: FAIL. The new "the look stays on the theme" tests fail: the screens still contain hex or rgb colours, the shell has no `{INDEPENDENT_LINE}` and no light status bar, the body map has no summary strip, and there is no tab icon to hide. The older honesty tests still pass. Paste the real output.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -729,7 +750,7 @@ interface Props {
 /** Simple line icons drawn with SVG, so no icon package is needed. The tab's text label carries the meaning. */
 export default function TabIcon({ name, color, size = 22 }: Props) {
   return (
-    <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View aria-hidden>
       <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
         {name === 'body' && (
           <>
@@ -1036,7 +1057,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: space.sm,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOpacity: 0.5,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
@@ -1930,7 +1951,8 @@ import { colors, radius, space, type } from './theme';
 /** What the model rests on, and where it stops. The limits card is part of the screen, not an extra. */
 export default function EvidenceScreen() {
   const { width } = useWindowDimensions();
-  const chartWidth = Math.min(width - 32 - 24, 360);
+  // Page padding (16) and the card's border (1) and padding (16), on each side.
+  const chartWidth = Math.min(width - 66, 360);
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.heading}>{EVIDENCE_HEADING}</Text>
@@ -2089,7 +2111,7 @@ Replace `app.json` with:
 - [ ] **Step 4: Run the whole suite, typecheck and the web export**
 
 Run: `npm test && npm run typecheck && npx expo export --platform web --output-dir /tmp/ui-export`
-Expected: 30 test files, 285 tests pass (the 282 after Task 1 plus 3 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/ui-export` and confirm `git status --short` shows only the nineteen files of this task (2 new, 17 replaced) and no `dist/` folder.
+Expected: 30 test files, 288 tests pass (the 284 after Task 1 plus 4 wiring tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/ui-export` and confirm `git status --short` shows only the nineteen files of this task (2 new, 17 replaced) and no `dist/` folder.
 
 - [ ] **Step 5: Prove the wiring tests can fail**
 
