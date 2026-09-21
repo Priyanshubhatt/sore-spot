@@ -1,8 +1,8 @@
-import { createServer } from 'node:http';
+import { createServer, type RequestListener, type Server } from 'node:http';
 
 export interface CallbackOptions {
   port: number;
-  /** The address the redirect names: `localhost` or `127.0.0.1`. The server binds exactly that, and only that. */
+  /** The address the redirect names: `localhost` or `127.0.0.1`. `localhost` binds both loopback addresses (127.0.0.1 and ::1), since a browser may use either; nothing else is ever bound. */
   host?: string;
   path: string;
   /** The state sent with the sign-in request: only a redirect that brings the same one back is used. */
@@ -25,14 +25,15 @@ const cleanReason = (raw: string) => raw.replace(/[^A-Za-z0-9_.-]/g, '').slice(0
 export function waitForCallback(opts: CallbackOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    const servers: Server[] = [];
     const settle = (finish: () => void) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      server.close();
+      for (const s of servers) s.close();
       finish();
     };
-    const server = createServer((req, res) => {
+    const handler: RequestListener = (req, res) => {
       const reply = (status: number, body: string, type = 'text/html; charset=utf-8') => res.writeHead(status, { 'content-type': type }).end(body);
       let url: URL;
       try {
@@ -61,20 +62,29 @@ export function waitForCallback(opts: CallbackOptions): Promise<string> {
         reply(200, page('Signed in. You can close this tab and return to the terminal.'));
         settle(() => resolve(code));
       }
-    });
+    };
     const timer = setTimeout(() => {
       settle(() => reject(new Error(`No sign-in arrived within ${Math.round(opts.timeoutMs / 1000)} seconds. Run the export again.`)));
     }, opts.timeoutMs);
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      reject(
-        err.code === 'EADDRINUSE'
-          ? new Error(`Port ${opts.port} is already in use, so the sign-in redirect cannot be caught. Stop whatever is using it (often an Expo or dev server) and run the export again.`)
-          : err,
-      );
-    });
-    server.listen({ port: opts.port, host: opts.host ?? 'localhost' });
+    const host = opts.host ?? 'localhost';
+    // A browser resolving `localhost` may pick either loopback address, so both are bound. Some machines have no IPv6:
+    // that one failing to bind is fine as long as the IPv4 one is up.
+    const hosts = host === 'localhost' ? ['127.0.0.1', '::1'] : [host];
+    for (const h of hosts) {
+      const server = createServer(handler);
+      servers.push(server);
+      server.on('error', (err: NodeJS.ErrnoException) => {
+        if (settled) return;
+        if (h === '::1' && (err.code === 'EADDRNOTAVAIL' || err.code === 'EAFNOSUPPORT')) return;
+        settle(() =>
+          reject(
+            err.code === 'EADDRINUSE'
+              ? new Error(`Port ${opts.port} is already in use, so the sign-in redirect cannot be caught. Stop whatever is using it (often an Expo or dev server) and run the export again.`)
+              : err,
+          ),
+        );
+      });
+      server.listen({ port: opts.port, host: h });
+    }
   });
 }

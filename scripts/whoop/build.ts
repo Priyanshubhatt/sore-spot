@@ -1,5 +1,6 @@
 import { parseReplay } from '../../engine/replay';
 import { SPORT_MUSCLE_MAP, STRENGTH_SPORTS, normalizeSport } from '../../engine/sportMuscleMap';
+import { TIMECURVE_HORIZON_HOURS } from '../../engine/timecurve';
 import type { ReplayFile } from '../../engine/types';
 
 export interface ExportInput {
@@ -26,6 +27,44 @@ function dedupe(records: unknown[], key: (r: unknown) => string): unknown[] {
     seen.add(k);
     return true;
   });
+}
+
+export interface Skipped {
+  workouts: number;
+  recovery: number;
+  /** Up to three distinct reasons, with every id removed, so the line is safe to paste back. */
+  reasons: string[];
+}
+
+/** "Invalid replay file: workout 4f2a-...: start must be..." becomes "workout: start must be...". */
+const reasonOf = (err: unknown): string =>
+  (err instanceof Error ? err.message : String(err))
+    .replace(/^Invalid replay file: (workout|recovery) (?:cycle \d+|\S+): /, '$1: ')
+    .slice(0, 120);
+
+/**
+ * Keeps the records the app can read and counts the rest. Real payloads are the one thing not checked against WHOOP
+ * ahead of time, so one unrecognised record must not throw away a whole export.
+ */
+export function screenRecords(input: ExportInput): { input: ExportInput; skipped: Skipped } {
+  const reasons = new Set<string>();
+  const skipped: Skipped = { workouts: 0, recovery: 0, reasons: [] };
+  const keep = (records: unknown[], kind: 'workouts' | 'recovery'): unknown[] =>
+    records.filter((r) => {
+      try {
+        // Each record is checked alone, by the same parser the app uses.
+        parseReplay(JSON.parse(JSON.stringify({ synthetic: false, workouts: kind === 'workouts' ? [r] : [], recovery: kind === 'recovery' ? [r] : [] })));
+        return true;
+      } catch (err) {
+        skipped[kind]++;
+        reasons.add(reasonOf(err));
+        return false;
+      }
+    });
+  const workouts = keep(input.workouts, 'workouts');
+  const recovery = keep(input.recovery, 'recovery');
+  skipped.reasons = [...reasons].slice(0, 3);
+  return { input: { ...input, workouts, recovery }, skipped };
 }
 
 /**
@@ -57,8 +96,15 @@ export interface ExportSummary {
   from?: string;
   to?: string;
   sports: SportCount[];
+  /** Strength sessions that still shape the forecast (finished within its last {@link RECENT_HOURS} hours); older ones are never asked about. */
   strengthSessions: number;
 }
+
+/** Where the soreness curve reaches zero: a session older than this changes nothing, so it is never asked about. */
+export const RECENT_HOURS = TIMECURVE_HORIZON_HOURS;
+
+/** Without an export time (the synthetic week) everything counts as recent. */
+const isRecent = (end: string, asOf?: string): boolean => asOf === undefined || Date.parse(asOf) - Date.parse(end) <= RECENT_HOURS * 3_600_000;
 
 /** Counts only: no ids, no dates beyond the range, nothing personal. Safe to paste back for review. */
 export function summarize(replay: ReplayFile): ExportSummary {
@@ -78,7 +124,7 @@ export function summarize(replay: ReplayFile): ExportSummary {
     from: starts[0]?.slice(0, 10),
     to: starts[starts.length - 1]?.slice(0, 10),
     sports,
-    strengthSessions: sports.filter((s) => s.strength).reduce((n, s) => n + s.count, 0),
+    strengthSessions: replay.workouts.filter((w) => STRENGTH_SPORTS.has(normalizeSport(w.sport_name)) && isRecent(w.end, replay.asOf)).length,
   };
 }
 
@@ -97,7 +143,7 @@ export function formatSummary(s: ExportSummary): string[] {
   );
   lines.push(
     s.strengthSessions > 0
-      ? `Strength sessions to tag in the app: ${s.strengthSessions}`
+      ? `Strength sessions to tag in the app: ${s.strengthSessions} (only the last ${Math.round(RECENT_HOURS / 24)} days change the forecast)`
       : 'No strength sessions to tag.',
   );
   return lines;

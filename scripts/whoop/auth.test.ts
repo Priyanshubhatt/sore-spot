@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildAuthUrl, exchangeCode, isFresh, makeState, parseTokenResponse, refreshTokens } from './auth';
 import { ENV, failure, respond, scriptedFetch } from './fakes';
-import { DEFAULT_ENDPOINTS, SCOPES, WhoopHttpError } from './http';
+import { DEFAULT_ENDPOINTS, SCOPES, USER_AGENT, WhoopHttpError } from './http';
 
 const NOW = 1_800_000_000_000;
 const tokenJson = { access_token: 'acc-111111', refresh_token: 'ref-222222', expires_in: 3600, scope: 'read:workout read:recovery offline', token_type: 'bearer' };
@@ -106,5 +106,13 @@ describe('exchanging and refreshing', () => {
   it('rejects a success response that is not JSON', async () => {
     const { fetchFn } = scriptedFetch([respond(200, 'not json')]);
     await expect(exchangeCode(ENV, 'c', fetchFn, NOW)).rejects.toThrow(/not JSON/);
+  });
+});
+
+describe('the token request', () => {
+  it('says who is asking', async () => {
+    const { fetchFn, calls } = scriptedFetch([respond(200, { access_token: 'a', refresh_token: 'r', expires_in: 3600 })]);
+    await exchangeCode(ENV, 'code', fetchFn, 0, DEFAULT_ENDPOINTS);
+    expect(calls[0].headers['user-agent']).toBe(USER_AGENT);
   });
 });

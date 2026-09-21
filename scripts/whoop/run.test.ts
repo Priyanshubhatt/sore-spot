@@ -14,7 +14,7 @@ const CLIENT_ID = 'test-client-id-1234';
 const PRIVATE = [SECRET, 'access-1', 'refresh-1', 'access-2', 'refresh-2', 'the-code-xyz'];
 
 /** A stand-in for WHOOP: a token endpoint that rotates refresh tokens, and paged v2 collections. */
-function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number; workoutsBody?: string; refreshStatus?: number; tokenNetworkError?: boolean; emptyWorkouts?: boolean } = {}) {
+function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number; workoutsBody?: string; refreshStatus?: number; tokenNetworkError?: boolean; emptyWorkouts?: boolean; workoutRecords?: unknown[]; recoveryRecords?: unknown[] } = {}) {
   const requests: { url: string; method: string; body?: string; auth?: string }[] = [];
   let access = 'access-1';
   let refresh = 'refresh-1';
@@ -48,10 +48,10 @@ function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number; 
     if (init?.headers?.authorization !== `Bearer ${access}`) return respond(401, { error: 'unauthorized' });
     if (url.pathname === '/developer/v2/activity/workout') {
       if (options.emptyWorkouts) return respond(200, { records: [] });
-      return options.workoutsStatus ? respond(options.workoutsStatus, options.workoutsBody ?? 'server trouble') : respond(200, pages(syntheticReplay.workouts, url));
+      return options.workoutsStatus ? respond(options.workoutsStatus, options.workoutsBody ?? 'server trouble') : respond(200, pages(options.workoutRecords ?? syntheticReplay.workouts, url));
     }
     if (url.pathname === '/developer/v2/recovery') {
-      return options.recoveryStatus ? respond(options.recoveryStatus, 'server trouble') : respond(200, pages(syntheticReplay.recovery ?? [], url));
+      return options.recoveryStatus ? respond(options.recoveryStatus, 'server trouble') : respond(200, pages(options.recoveryRecords ?? syntheticReplay.recovery ?? [], url));
     }
     return respond(404, 'nope');
   };
@@ -234,6 +234,26 @@ describe('runExport: failures', () => {
     const { deps, written } = await setup({ emptyWorkouts: true });
     const err = await failure(runExport(deps));
     expect(err.message).toMatch(/no workouts for the last 60 days.*--days/);
+    expect(written).toHaveLength(0);
+  });
+
+  it('skips a record it cannot read, says how many and why, and still writes the rest', async () => {
+    const good = syntheticReplay.workouts;
+    const bad = { ...good[0], id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', start: 'garbage' };
+    const { deps, written, logs } = await setup({ workoutRecords: [...good, bad], recoveryRecords: [{ cycle_id: 424242, created_at: 'x', score_state: 'SCORED' }] });
+    await runExport(deps);
+    expect(written).toHaveLength(1);
+    expect(parseReplay(JSON.parse(written[0])).workouts).toHaveLength(good.length);
+    const line = logs.find((l) => l.startsWith('Skipped')) ?? '';
+    expect(line).toMatch(/Skipped 1 workout and 1 recovery records/);
+    expect(line).toMatch(/start must be an ISO date string/);
+    expect(logs.join('\n')).not.toMatch(/aaaaaaaa|424242/);
+  });
+
+  it('writes nothing, and says so, when not one workout record can be read', async () => {
+    const { deps, written } = await setup({ workoutRecords: [{ id: 'x1', weird: true }, { id: 'x2' }] });
+    const err = await failure(runExport(deps));
+    expect(err.message).toMatch(/None of the 2 workout records were in a shape this script recognises \(workout: /);
     expect(written).toHaveLength(0);
   });
 

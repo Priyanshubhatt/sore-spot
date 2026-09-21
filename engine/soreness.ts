@@ -20,7 +20,7 @@ import {
   TAG_MUSCLES,
   normalizeSport,
 } from './sportMuscleMap';
-import { timecurve } from './timecurve';
+import { TIMECURVE_HORIZON_HOURS, timecurve } from './timecurve';
 import {
   DayForecast,
   Driver,
@@ -104,6 +104,9 @@ export function resolveSessions(workouts: TaggedWorkout[], asOf: Date): Resolved
     const endMs = Date.parse(w.end);
     if (w.score_state !== 'SCORED' || !w.score || endMs > asOf.getTime()) continue;
     const r = weightsFor(w);
+    // A session the curve has already run out for changes nothing, so an untagged or unmapped one is not worth reporting.
+    const stale = asOf.getTime() - endMs > TIMECURVE_HORIZON_HOURS * MS_PER_HOUR;
+    if ((r === 'needsTag' || r === 'unmapped') && stale) continue;
     if (r === 'needsTag') {
       needsTag.push(w.id);
       continue;

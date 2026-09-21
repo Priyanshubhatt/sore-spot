@@ -75,6 +75,20 @@ describe('computeForecast', () => {
     for (const day of f.byDay) for (const m of MUSCLES) expect(day[m].band).toBe('low');
   });
 
+  it('does not ask about an untagged or unmapped session the curve has already run out for', () => {
+    const end = endOf(untaggedStrength, 'untagged');
+    const unmapped = { ...unknownSport[0], id: 'old-unmapped' };
+    const both = [...untaggedStrength, unmapped];
+    const soon = computeForecast(both, plus(end, 191), S);
+    expect(soon.needsTag).toEqual(['untagged']);
+    const later = computeForecast(both, plus(end, 193), S);
+    expect(later.needsTag).toEqual([]);
+    expect(later.unmappedSports).toEqual([]);
+    // A tagged old session is unaffected: it is scored as before (it just contributes nothing any more).
+    const tagged = untaggedStrength.map((w) => ({ ...w, session_tag: 'upper' as const }));
+    expect(computeForecast(tagged, plus(end, 193), S).needsTag).toEqual([]);
+  });
+
   it('loads the right muscles for a tagged lower-body session', () => {
     const f = computeForecast(legDayOne, endOf(legDayOne, 'legs-1'), S);
     expect(f.needsTag).toEqual([]);

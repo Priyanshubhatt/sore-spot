@@ -1,5 +1,5 @@
 import { redact } from './env';
-import { DEFAULT_ENDPOINTS, WhoopHttpError, type Endpoints, type FetchLike } from './http';
+import { DEFAULT_ENDPOINTS, USER_AGENT, WhoopHttpError, type Endpoints, type FetchLike } from './http';
 
 export interface ApiContext {
   fetchFn: FetchLike;
@@ -43,7 +43,7 @@ export async function fetchAllPages(path: string, window: Window, ctx: ApiContex
     let attempt = 0;
     for (;;) {
       const res = await ctx.fetchFn(url.toString(), {
-        headers: { authorization: `Bearer ${ctx.accessToken}`, accept: 'application/json' },
+        headers: { authorization: `Bearer ${ctx.accessToken}`, accept: 'application/json', 'user-agent': USER_AGENT },
       });
       const text = await res.text();
       if (res.ok) {
@@ -69,13 +69,14 @@ export async function fetchAllPages(path: string, window: Window, ctx: ApiContex
         attempt++;
         continue;
       }
+      const said = redact(text, secrets).slice(0, 300);
       if (res.status === 401) {
-        throw new WhoopHttpError(401, 'WHOOP rejected the access token (HTTP 401). Run the export again to sign in.');
+        throw new WhoopHttpError(401, `WHOOP rejected the access token (HTTP 401). Run the export again to sign in.${said ? ` WHOOP said: ${said}` : ''}`);
       }
       if (res.status === 403) {
-        throw new WhoopHttpError(403, `WHOOP refused ${path} (HTTP 403): the app may lack the scope for it.`);
+        throw new WhoopHttpError(403, `WHOOP refused ${path} (HTTP 403). The app may lack the scope for it, or WHOOP may be blocking the request.${said ? ` WHOOP said: ${said}` : ''}`);
       }
-      throw new WhoopHttpError(res.status, `WHOOP returned HTTP ${res.status} for ${path}: ${redact(text, secrets).slice(0, 300)}`);
+      throw new WhoopHttpError(res.status, `WHOOP returned HTTP ${res.status} for ${path}: ${said}`);
     }
     if (!nextToken) return records;
   }

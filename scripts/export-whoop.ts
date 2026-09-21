@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { parseDays } from './whoop/args';
 import { waitForCallback } from './whoop/callback';
 import { callbackTarget, parseEnvFile, readWhoopEnv, redact } from './whoop/env';
 import { writePrivate } from './whoop/files';
@@ -10,14 +11,12 @@ import { PRIVATE_FILES, assertGitIgnored, gitCheckIgnore } from './whoop/safety'
 // One-time export of your own WHOOP history to data/replay.json. Run: npm run export-whoop
 // It reads .env, signs you in through WHOOP in your browser, and never prints a secret or a token.
 
-const DEFAULT_DAYS = 60;
-
-function parseDays(argv: string[]): number {
-  const i = argv.indexOf('--days');
-  if (i === -1) return DEFAULT_DAYS;
-  const n = Number(argv[i + 1]);
-  if (!Number.isInteger(n) || n < 1 || n > 365) throw new Error('--days must be a whole number from 1 to 365.');
-  return n;
+/** A dropped connection, a timeout or a refused redirect would otherwise all read as "fetch failed". */
+function explainNetworkError(err: unknown): Error {
+  const e = err as { name?: string; message?: string; cause?: { code?: string; message?: string } };
+  if (e?.name === 'TimeoutError') return new Error('WHOOP did not answer within 30 seconds. Check the connection and run the export again.');
+  const why = e?.cause?.code ?? e?.cause?.message ?? e?.message ?? 'unknown';
+  return new Error(`Could not reach WHOOP (${String(why).slice(0, 80)}). Check the connection, and that nothing (a proxy or VPN) is redirecting the request.`);
 }
 
 function openBrowser(url: string): void {
@@ -52,7 +51,9 @@ async function main(): Promise<void> {
       days,
       now: () => Date.now(),
       // No redirects (a form body must never be replayed to another address) and no request waits forever.
-      fetchFn: (url, init) => fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(30_000) }),
+      fetchFn: (url, init) => fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(30_000) }).catch((err) => {
+        throw explainNetworkError(err);
+      }),
       tokenFile: {
         read: () => (existsSync(tokenPath) ? readFileSync(tokenPath, 'utf8') : null),
         write: (text) => writePrivate(tokenPath, text),

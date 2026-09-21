@@ -1,9 +1,11 @@
+import { networkInterfaces } from 'node:os';
 import { connect, createServer } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import { waitForCallback } from './callback';
 import { failure, freePort, hit } from './fakes';
 
 const STATE = 'abcd1234abcd1234';
+const hasIpv6Loopback = () => Object.values(networkInterfaces()).some((list) => list?.some((a) => a.address === '::1'));
 const options = (port: number, timeoutMs = 5000) => ({ port, path: '/callback', expectedState: STATE, timeoutMs });
 
 describe('waitForCallback', () => {
@@ -103,6 +105,36 @@ describe('waitForCallback', () => {
     const page = await hit(`http://127.0.0.1:${port}/callback?code=v4&state=${STATE}`);
     expect(page.status).toBe(200);
     expect(await code).toBe('v4');
+  });
+
+  it('binds both loopback addresses for localhost, so a browser that resolves it to either one gets through', async () => {
+    const port = await freePort();
+    const code = waitForCallback(options(port));
+    const v4 = await hit(`http://127.0.0.1:${port}/callback?code=wrong&state=NOPE0000`);
+    expect(v4.status).toBe(400); // reached the server (and ignored, for the wrong state)
+    if (hasIpv6Loopback()) {
+      const v6 = await hit(`http://[::1]:${port}/callback?code=v6-code&state=${STATE}`);
+      expect(v6.status).toBe(200);
+      expect(await code).toBe('v6-code');
+    } else {
+      await hit(`http://127.0.0.1:${port}/callback?code=v4-code&state=${STATE}`);
+      expect(await code).toBe('v4-code');
+    }
+  });
+
+  it('frees both loopback addresses when it finishes', async () => {
+    const port = await freePort();
+    const code = waitForCallback(options(port));
+    await hit(`http://127.0.0.1:${port}/callback?code=done&state=${STATE}`);
+    await code;
+    const hosts = hasIpv6Loopback() ? ['127.0.0.1', '::1'] : ['127.0.0.1'];
+    for (const host of hosts) {
+      await new Promise<void>((resolve, reject) => {
+        const s = createServer();
+        s.once('error', reject);
+        s.listen({ port, host }, () => s.close(() => resolve()));
+      });
+    }
   });
 
   it('rejects a redirect that has the right state but no code', async () => {

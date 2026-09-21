@@ -1,6 +1,6 @@
 import { fetchRecovery, fetchWorkouts } from './api';
 import { buildAuthUrl, exchangeCode, isFresh, makeState, refreshTokens, type Tokens } from './auth';
-import { buildReplay, formatSummary, summarize, type ExportSummary } from './build';
+import { buildReplay, formatSummary, screenRecords, summarize, type ExportSummary } from './build';
 import type { WhoopEnv } from './env';
 import { DEFAULT_ENDPOINTS, WhoopHttpError, type Endpoints, type FetchLike } from './http';
 import { loadTokens, saveTokens, type TokenFile } from './tokenStore';
@@ -96,7 +96,15 @@ export async function runExport(deps: RunDeps): Promise<ExportSummary> {
   if (data.workouts.length === 0) {
     throw new Error(`WHOOP returned no workouts for the last ${deps.days} days, so nothing was written. Try a longer span with --days, or check that the sign-in was for the right account.`);
   }
-  const replay = buildReplay({ ...data, exportedAt: end });
+  const { input, skipped } = screenRecords({ ...data, exportedAt: end });
+  const because = skipped.reasons.length > 0 ? ` (${skipped.reasons.join('; ')})` : '';
+  if (skipped.workouts + skipped.recovery > 0) {
+    deps.log(`Skipped ${skipped.workouts} workout and ${skipped.recovery} recovery records that were not in the shape this script expects${because}. The rest were kept.`);
+  }
+  if (input.workouts.length === 0) {
+    throw new Error(`None of the ${data.workouts.length} workout records were in a shape this script recognises${because}, so nothing was written. Paste this message back so the script can be fixed.`);
+  }
+  const replay = buildReplay(input);
   deps.writeReplay(JSON.stringify(replay, null, 2));
   const summary = summarize(replay);
   for (const line of formatSummary(summary)) deps.log(line);

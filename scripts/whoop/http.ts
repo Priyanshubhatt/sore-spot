@@ -34,5 +34,8 @@ export const DEFAULT_ENDPOINTS: Endpoints = {
   apiBase: 'https://api.prod.whoop.com/developer',
 };
 
+/** Sent on every request, so WHOOP sees what this is instead of the bare `node` agent string. */
+export const USER_AGENT = 'sore-spot-export/1.0 (independent prototype; not affiliated with WHOOP)';
+
 /** Only these are ever requested: the workouts and recovery the app uses, and a refresh token. */
 export const SCOPES = ['read:workout', 'read:recovery', 'offline'] as const;

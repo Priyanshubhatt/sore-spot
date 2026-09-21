@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { WhoopEnv } from './env';
 import { redact } from './env';
-import { DEFAULT_ENDPOINTS, SCOPES, WhoopHttpError, type Endpoints, type FetchLike } from './http';
+import { DEFAULT_ENDPOINTS, SCOPES, WhoopHttpError, type Endpoints, type FetchLike, USER_AGENT } from './http';
 
 export interface Tokens {
   access_token: string;
@@ -61,7 +61,7 @@ async function tokenRequest(
   const body = new URLSearchParams({ ...fields, client_id: env.clientId, client_secret: env.clientSecret }).toString();
   const res = await fetchFn(endpoints.tokenUrl, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+    headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json', 'user-agent': USER_AGENT },
     body,
   });
   const text = await res.text();

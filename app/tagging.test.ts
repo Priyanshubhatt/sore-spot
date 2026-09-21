@@ -23,6 +23,23 @@ describe('TAG_OPTIONS', () => {
   });
 });
 
+describe('describeWorkout in the time zone of the workout', () => {
+  const at = (start: string, timezone_offset?: string) => describeWorkout({ start, sport_name: 'weightlifting', ...(timezone_offset ? { timezone_offset } : {}) });
+
+  it('shows the day it happened where the workout was, not the UTC day', () => {
+    // 7:30 pm on Wed Sep 16 in New York (UTC-4) is already Thu Sep 17 in UTC.
+    expect(at('2026-09-16T23:30:00Z', '-04:00')).toBe('Wed Sep 16 · Weightlifting');
+    // 7:30 am on Thu Sep 17 in Sydney (UTC+10) is still Wed Sep 16 in UTC.
+    expect(at('2026-09-16T21:30:00Z', '+10:00')).toBe('Thu Sep 17 · Weightlifting');
+    expect(at('2026-09-16T21:30:00Z', '+0530')).toBe('Thu Sep 17 · Weightlifting');
+  });
+
+  it('falls back to UTC when the offset is missing or unreadable', () => {
+    expect(at('2026-09-16T23:30:00Z')).toBe('Wed Sep 16 · Weightlifting');
+    expect(at('2026-09-16T23:30:00Z', 'EST')).toBe('Wed Sep 16 · Weightlifting');
+  });
+});
+
 describe('applyTags', () => {
   it('sets the chosen tag on the matching workout and leaves the others alone', () => {
     const out = applyTags([wed, run], { w1: 'upper' });

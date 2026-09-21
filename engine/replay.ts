@@ -81,7 +81,7 @@ export function parseReplay(raw: unknown): ReplayFile {
   const workouts = o.workouts.map(checkWorkout);
   const replay: ReplayFile = { synthetic: o.synthetic, workouts };
   if (o.asOf !== undefined) {
-    if (typeof o.asOf !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(o.asOf) || Number.isNaN(Date.parse(o.asOf))) {
+    if (typeof o.asOf !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}.*(Z|[+-]\d{2}:?\d{2})$/.test(o.asOf) || Number.isNaN(Date.parse(o.asOf))) {
       throw new Error('Invalid replay file: "asOf" must be an ISO date string');
     }
     replay.asOf = o.asOf;

@@ -76,3 +76,15 @@ describe('what the scripts never do', () => {
     }
   });
 });
+
+describe('the export command line', () => {
+  it('reads its arguments with the shared parser, so a stray or mistyped argument stops it', () => {
+    expect(cli).toContain("import { parseDays } from './whoop/args'");
+    expect(cli).toContain('parseDays(process.argv.slice(2))');
+  });
+
+  it('turns a dropped connection, a timeout or a refused redirect into a sentence, not "fetch failed"', () => {
+    expect(cli).toContain('explainNetworkError(err)');
+    expect(cli).toMatch(/TimeoutError/);
+  });
+});

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fetchAllPages, fetchRecovery, fetchWorkouts } from './api';
 import { ENV, failure, respond, scriptedFetch } from './fakes';
-import { WhoopHttpError } from './http';
+import { WhoopHttpError, USER_AGENT } from './http';
 
 const window = { start: new Date('2026-07-01T00:00:00Z'), end: new Date('2026-09-01T00:00:00Z') };
 const noSleep = async () => undefined;
@@ -72,6 +72,22 @@ describe('fetchAllPages', () => {
     expect(a.message).toMatch(/sign in/i);
     const b = await failure(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(403, 'x')]).fetchFn)));
     expect(b.message).toMatch(/scope/);
+  });
+
+  it('keeps what WHOOP said on a 401 or 403 (scrubbed), and does not claim a cause it cannot know', async () => {
+    const a = await failure(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(401, 'token expired acc-TOKEN-1')]).fetchFn)));
+    expect(a.message).toMatch(/WHOOP said: token expired/);
+    expect(a.message).not.toContain('acc-TOKEN-1');
+    const b = await failure(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(403, { error: 'blocked_by_policy' })]).fetchFn)));
+    expect(b.message).toMatch(/WHOOP said: .*blocked_by_policy/);
+    expect(b.message).toMatch(/may lack the scope for it, or WHOOP may be blocking/);
+  });
+
+  it('says who is asking, instead of sending the bare "node" agent string', async () => {
+    const { fetchFn, calls } = scriptedFetch([respond(200, { records: [] })]);
+    await fetchAllPages('/v2/recovery', window, ctx(fetchFn));
+    expect(calls[0].headers['user-agent']).toBe(USER_AGENT);
+    expect(USER_AGENT).toMatch(/not affiliated with WHOOP/);
   });
 
   it('never prints the access token or the client secret from an error body', async () => {

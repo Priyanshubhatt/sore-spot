@@ -9,7 +9,7 @@ describe('the export time (asOf) in a replay file', () => {
   });
 
   it('is rejected when it is not a date string', () => {
-    for (const bad of ['yesterday', '', '1', '2026-09-22', 123, null, {}]) {
+    for (const bad of ['yesterday', '', '1', '2026-09-22', '2026-09-22T08:00', '2026-09-22T08:00:00', 123, null, {}]) {
       expect(() => parseReplay({ ...syntheticReplay, asOf: bad }), String(bad)).toThrow(/asOf/);
     }
   });
