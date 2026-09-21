@@ -57,8 +57,8 @@ By default the app shows the synthetic week. To see your own history instead, on
    WHOOP_CLIENT_SECRET=...
    WHOOP_REDIRECT_URI=http://localhost:3000/callback
    ```
-3. Run `npm run export-whoop`. It opens WHOOP sign-in in your browser, then reads the last 60 days of workouts and recovery (`--days N` for another span, up to 365) and writes `data/replay.json`. It asks only for the workout and recovery read permissions, plus a refresh token.
-4. Restart Expo. The header now says `REAL DATA` instead of `SYNTHETIC DATA`, and the forecast starts from the moment you exported.
+3. Run `npm run export-whoop`. The first time it opens WHOOP sign-in in your browser (after that it reuses and renews the saved sign-in), then reads the last 60 days of workouts and recovery (`--days N` for another span, up to 365) and writes `data/replay.json`. It asks only for the workout and recovery read permissions, plus a refresh token.
+4. Restart Expo (add `--clear` if the old data still shows). The header now says `REAL DATA` instead of `SYNTHETIC DATA`, and the forecast starts from the moment you exported.
 
 The script prints how many workouts it found, which sports it saw, and which of them the model has no muscle map for yet (those add no soreness). Strength sessions arrive untagged, so the app asks which muscles each one worked.
 
@@ -68,6 +68,7 @@ It refuses to run unless `.env`, `data/replay.json` and `whoop.token.json` are a
 
 - The app runs on `data/replay.synthetic.ts` unless a local `data/replay.json` exists. That file, `.env` and `*.token.json` are git-ignored: **never commit real health data or WHOOP credentials.**
 - Health answers stay in memory and are asked again each launch. Nothing is stored or sent anywhere.
+- Web builds (`npx expo export`) bundle `data/replay.json` into their output when it exists, so keep such a build private or delete `data/replay.json` before making one you will share.
 - Your export stays on your laptop. The app loads it from `data/replay.json`, and Expo serves it to whichever device you open the app on, so use your own network rather than a public tunnel when running with real data.
 - See `PRIVACY.md` for the prototype's privacy policy, which covers the WHOOP export.
 

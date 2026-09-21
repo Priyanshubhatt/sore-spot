@@ -47,8 +47,8 @@ describe('readWhoopEnv', () => {
 
 describe('callbackTarget', () => {
   it('reads the port and path of a localhost redirect', () => {
-    expect(callbackTarget('http://localhost:3000/callback')).toEqual({ port: 3000, path: '/callback' });
-    expect(callbackTarget('http://127.0.0.1:8123/cb')).toEqual({ port: 8123, path: '/cb' });
+    expect(callbackTarget('http://localhost:3000/callback')).toEqual({ host: 'localhost', port: 3000, path: '/callback' });
+    expect(callbackTarget('http://127.0.0.1:8123/cb')).toEqual({ host: '127.0.0.1', port: 8123, path: '/cb' });
   });
 
   it('refuses a redirect the script could not catch', () => {
@@ -61,6 +61,15 @@ describe('callbackTarget', () => {
 describe('redact', () => {
   it('removes every occurrence of every secret', () => {
     expect(redact('a SECRET1234 b SECRET1234 c tok-abcdef', ['SECRET1234', 'tok-abcdef'])).toBe('a [redacted] b [redacted] c [redacted]');
+  });
+
+  it('also removes a secret that was URL-encoded, form-encoded or JSON-escaped in an echoed request', () => {
+    const secret = 'p@ss word/+"x';
+    const echoed = [encodeURIComponent(secret), encodeURIComponent(secret).replace(/%20/g, '+'), JSON.stringify(secret).slice(1, -1)].join(' | ');
+    const out = redact(`echo: ${secret} | ${echoed}`, [secret]);
+    expect(out).not.toContain('word');
+    expect(out).not.toContain('%40');
+    expect(out.match(/\[redacted\]/g)).toHaveLength(4);
   });
 
   it('ignores empty or very short secrets, so it never blanks ordinary text', () => {

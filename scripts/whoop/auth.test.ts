@@ -46,7 +46,7 @@ describe('token responses', () => {
     expect(() => parseTokenResponse(null, NOW)).toThrow(/not an object/);
   });
 
-  it('treats a token as fresh only while more than a minute is left', () => {
+  it('counts a token as fresh only while more than a minute is left', () => {
     const t = parseTokenResponse(tokenJson, NOW);
     expect(isFresh(t, NOW)).toBe(true);
     expect(isFresh(t, NOW + 3_540_001)).toBe(false);
@@ -79,6 +79,12 @@ describe('exchanging and refreshing', () => {
     expect(t.refresh_token).toBe('ref-ROTATED');
     const body = Object.fromEntries(new URLSearchParams(calls[0].body));
     expect(body).toMatchObject({ grant_type: 'refresh_token', refresh_token: 'ref-222222', scope: 'offline' });
+  });
+
+  it('keeps the old refresh token when a refresh response does not bring a new one', async () => {
+    const { refresh_token: _dropped, ...withoutRefresh } = tokenJson;
+    const { fetchFn } = scriptedFetch([respond(200, withoutRefresh)]);
+    expect((await refreshTokens(ENV, 'ref-222222', fetchFn, NOW)).refresh_token).toBe('ref-222222');
   });
 
   it('reports a refused code exchange with its status but never with the secret, the client id or the code', async () => {

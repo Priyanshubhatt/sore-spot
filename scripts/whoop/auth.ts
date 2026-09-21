@@ -102,5 +102,5 @@ export function refreshTokens(
     fetchFn,
     now,
     endpoints,
-  );
+  ).then((t) => ({ ...t, refresh_token: t.refresh_token ?? refreshToken }));
 }

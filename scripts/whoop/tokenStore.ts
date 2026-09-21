@@ -7,9 +7,9 @@ export interface TokenFile {
 
 /** The saved tokens, or null when there is no usable file (missing, unreadable or not in the expected shape). */
 export function loadTokens(file: TokenFile): Tokens | null {
-  const text = file.read();
-  if (text === null) return null;
   try {
+    const text = file.read();
+    if (text === null) return null;
     const o = JSON.parse(text) as Record<string, unknown>;
     if (typeof o.access_token !== 'string' || typeof o.expires_at !== 'number') return null;
     return {

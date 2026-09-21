@@ -38,7 +38,7 @@ export function buildReplay(input: ExportInput): ReplayFile {
     input.recovery,
     (r) => `${(r as { cycle_id?: unknown })?.cycle_id}:${(r as { sleep_id?: unknown })?.sleep_id}`,
   ).sort((a, b) => createdMs(a) - createdMs(b));
-  // Round-trip through JSON so what is validated is exactly what will be written.
+  // Round-trip through JSON so what is checked is exactly what will be written.
   const file = JSON.parse(JSON.stringify({ synthetic: false, asOf: input.exportedAt.toISOString(), workouts, recovery }));
   return parseReplay(file);
 }
@@ -68,7 +68,7 @@ export function summarize(replay: ReplayFile): ExportSummary {
     .map(([name, count]) => {
       const key = normalizeSport(name);
       const strength = STRENGTH_SPORTS.has(key);
-      return { name, count, known: strength || key in SPORT_MUSCLE_MAP, strength };
+      return { name, count, known: strength || Object.hasOwn(SPORT_MUSCLE_MAP, key), strength };
     })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const starts = replay.workouts.map((w) => w.start).sort();

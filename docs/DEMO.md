@@ -7,7 +7,7 @@ Independent prototype, not affiliated with WHOOP. Everything on screen is synthe
 1. On the laptop, in PowerShell: `npx.cmd expo start`. Scan the QR code with the iPhone Camera; Expo Go opens the app. Laptop and phone on the same Wi-Fi, or use a phone hotspot.
 2. Open the app once and check all three tabs load. The app starts on **Body map**, day **Now**, with **Front** selected. Kill and reopen it for a clean run: check-ins, tags and health answers are not saved between launches.
 3. Have the browser version ready too: `npx expo start --web` on the laptop.
-4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording.
+4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording. Make them with the synthetic week: if `data/replay.json` exists, the web build bundles your real data.
 
 ## Fallback ladder (never depend on one path)
 

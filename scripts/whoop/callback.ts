@@ -2,53 +2,68 @@ import { createServer } from 'node:http';
 
 export interface CallbackOptions {
   port: number;
+  /** The address the redirect names: `localhost` or `127.0.0.1`. The server binds exactly that, and only that. */
+  host?: string;
   path: string;
-  /** The state sent with the sign-in request: the redirect must bring the same one back. */
+  /** The state sent with the sign-in request: only a redirect that brings the same one back is used. */
   expectedState: string;
   timeoutMs: number;
 }
 
+// Every page is fixed text: nothing from the request is ever put in it.
 const page = (message: string) =>
   `<!doctype html><meta charset="utf-8"><title>Sore Spot export</title><body style="font:16px system-ui;padding:2rem"><p>${message}</p>`;
 
+/** Short and plain, so nothing from a redirect can put control codes in the terminal. */
+const cleanReason = (raw: string) => raw.replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 40) || 'unknown';
+
 /**
  * Listens on localhost for the one redirect WHOOP sends after sign-in and resolves with the
- * authorization code. Rejects on a denied sign-in, a state that does not match, or a timeout.
+ * authorization code. A request without the right state is answered and ignored, so a stray page
+ * cannot end or hijack a sign-in. Rejects on a denied sign-in, a missing code, or a timeout.
  */
 export function waitForCallback(opts: CallbackOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    const settle = (finish: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      server.close();
+      finish();
+    };
     const server = createServer((req, res) => {
-      const url = new URL(req.url ?? '/', `http://localhost:${opts.port}`);
-      if (url.pathname !== opts.path) {
-        res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
+      const reply = (status: number, body: string, type = 'text/html; charset=utf-8') => res.writeHead(status, { 'content-type': type }).end(body);
+      let url: URL;
+      try {
+        url = new URL(req.url ?? '/', `http://localhost:${opts.port}`);
+      } catch {
+        reply(400, 'Bad request', 'text/plain');
         return;
       }
-      const finish = (status: number, message: string, error?: Error, code?: string) => {
-        res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page(message));
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        server.close();
-        if (error) reject(error);
-        else resolve(code as string);
-      };
+      if (url.pathname !== opts.path) {
+        reply(404, 'Not found', 'text/plain');
+        return;
+      }
+      if (url.searchParams.get('state') !== opts.expectedState) {
+        reply(400, page('That request did not match this export, so it was ignored. You can close this tab.'));
+        return;
+      }
       const denied = url.searchParams.get('error');
+      const code = url.searchParams.get('code');
       if (denied) {
-        finish(400, 'WHOOP did not authorize the export. You can close this tab.', new Error(`WHOOP sign-in was not completed (${denied}).`));
-      } else if (url.searchParams.get('state') !== opts.expectedState) {
-        finish(400, 'That sign-in did not match this export. You can close this tab.', new Error('The sign-in redirect had a different state than the one sent, so it was ignored. Run the export again.'));
-      } else if (!url.searchParams.get('code')) {
-        finish(400, 'No code came back. You can close this tab.', new Error('The sign-in redirect had no code.'));
+        reply(400, page('WHOOP did not authorize the export. You can close this tab.'));
+        settle(() => reject(new Error(`WHOOP sign-in was not completed (${cleanReason(denied)}).`)));
+      } else if (!code) {
+        reply(400, page('No code came back. You can close this tab.'));
+        settle(() => reject(new Error('The sign-in redirect had no code.')));
       } else {
-        finish(200, 'Signed in. You can close this tab and return to the terminal.', undefined, url.searchParams.get('code') as string);
+        reply(200, page('Signed in. You can close this tab and return to the terminal.'));
+        settle(() => resolve(code));
       }
     });
     const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      server.close();
-      reject(new Error(`No sign-in arrived within ${Math.round(opts.timeoutMs / 1000)} seconds. Run the export again.`));
+      settle(() => reject(new Error(`No sign-in arrived within ${Math.round(opts.timeoutMs / 1000)} seconds. Run the export again.`)));
     }, opts.timeoutMs);
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (settled) return;
@@ -60,6 +75,6 @@ export function waitForCallback(opts: CallbackOptions): Promise<string> {
           : err,
       );
     });
-    server.listen({ port: opts.port, host: 'localhost' });
+    server.listen({ port: opts.port, host: opts.host ?? 'localhost' });
   });
 }

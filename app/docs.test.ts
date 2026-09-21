@@ -90,8 +90,15 @@ describe('the README section on using your own WHOOP data', () => {
     expect(readme).toMatch(/never prints a secret or a token/);
   });
 
-  it('warns to use a private network rather than a public tunnel with real data', () => {
+  it('warns to use a private network rather than a public tunnel with real data, and that a web build bundles the export', () => {
     expect(readme).toMatch(/rather than a public tunnel/);
+    expect(readme).toMatch(/bundle `data\/replay\.json`/);
+    expect(demo).toMatch(/bundles your real data/);
+  });
+
+  it('says when the sign-in opens and how to make Expo pick up new data', () => {
+    expect(readme).toMatch(/The first time it opens WHOOP sign-in/);
+    expect(readme).toMatch(/--clear/);
   });
 
   it('tells the presenter the runbook numbers are those of the synthetic week', () => {

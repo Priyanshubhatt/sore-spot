@@ -1,8 +1,9 @@
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { waitForCallback } from './whoop/callback';
 import { callbackTarget, parseEnvFile, readWhoopEnv, redact } from './whoop/env';
+import { writePrivate } from './whoop/files';
 import { runExport } from './whoop/run';
 import { PRIVATE_FILES, assertGitIgnored, gitCheckIgnore } from './whoop/safety';
 
@@ -36,8 +37,9 @@ async function main(): Promise<void> {
 
   const envPath = join(root, '.env');
   if (!existsSync(envPath)) throw new Error('No .env file here. Create it with WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET and WHOOP_REDIRECT_URI.');
-  const env = readWhoopEnv(parseEnvFile(readFileSync(envPath, 'utf8')));
+  // Before the credentials file is even read: everything private must already be git-ignored.
   assertGitIgnored(PRIVATE_FILES, gitCheckIgnore(root));
+  const env = readWhoopEnv(parseEnvFile(readFileSync(envPath, 'utf8')));
 
   const tokenPath = join(root, 'whoop.token.json');
   const replayPath = join(root, 'data', 'replay.json');
@@ -49,14 +51,15 @@ async function main(): Promise<void> {
       env,
       days,
       now: () => Date.now(),
-      fetchFn: (url, init) => fetch(url, init),
+      // No redirects (a form body must never be replayed to another address) and no request waits forever.
+      fetchFn: (url, init) => fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(30_000) }),
       tokenFile: {
         read: () => (existsSync(tokenPath) ? readFileSync(tokenPath, 'utf8') : null),
-        write: (text) => writeFileSync(tokenPath, text),
+        write: (text) => writePrivate(tokenPath, text),
       },
       writeReplay: (text) => {
         mkdirSync(dirname(replayPath), { recursive: true });
-        writeFileSync(replayPath, text);
+        writePrivate(replayPath, text);
       },
       openBrowser,
       waitForCode: (state) => waitForCallback({ ...target, expectedState: state, timeoutMs: 5 * 60_000 }),

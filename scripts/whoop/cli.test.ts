@@ -18,9 +18,16 @@ describe('the export command', () => {
     const guard = cli.indexOf('assertGitIgnored(PRIVATE_FILES, gitCheckIgnore(root))');
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(cli.indexOf('runExport('));
-    expect(cli.indexOf('readWhoopEnv(')).toBeLessThan(guard);
+    // Before the credentials file is even read or parsed.
+    expect(guard).toBeLessThan(cli.indexOf('readFileSync(envPath'));
+    expect(guard).toBeLessThan(cli.indexOf('readWhoopEnv('));
     // The guard runs before any network call, and the only network call is inside runExport.
     expect(cli).not.toMatch(/fetch\(\s*['"`]http/);
+  });
+
+  it('never follows a redirect and never waits forever, so a request body cannot be replayed elsewhere or hang', () => {
+    expect(cli).toContain("redirect: 'error'");
+    expect(cli).toContain('signal: AbortSignal.timeout(30_000)');
   });
 
   it('scrubs the client secret from any error before printing it', () => {
@@ -31,8 +38,10 @@ describe('the export command', () => {
   it('writes only the two private files it is allowed to, and only under the git-ignored names', () => {
     expect(cli).toContain("join(root, 'whoop.token.json')");
     expect(cli).toContain("join(root, 'data', 'replay.json')");
-    const writes = cli.match(/writeFileSync\(([^,]+),/g) ?? [];
-    expect(writes.map((w) => w.replace(/writeFileSync\(|,/g, ''))).toEqual(['tokenPath', 'replayPath']);
+    const writes = cli.match(/writePrivate\(([^,]+),/g) ?? [];
+    expect(writes.map((w) => w.replace(/writePrivate\(|,/g, ''))).toEqual(['tokenPath', 'replayPath']);
+    // Nothing writes a private file any other way.
+    expect(cli).not.toMatch(/writeFileSync|createWriteStream|appendFileSync/);
   });
 
   it('is reachable as `npm run export-whoop`, and the runner is a dev dependency', () => {

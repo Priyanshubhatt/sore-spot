@@ -68,6 +68,12 @@ describe('summarize and formatSummary', () => {
     expect(s.sports.find((x) => x.name === 'weightlifting')).toMatchObject({ known: true, strength: true });
   });
 
+  it('does not take an inherited object name such as "constructor" for a sport the model knows', () => {
+    const odd = { ...(workouts[0] as object), id: 'odd-1', sport_name: 'constructor' };
+    const s = summarize(buildReplay({ workouts: [odd], recovery: [], exportedAt: EXPORTED_AT }));
+    expect(s.sports[0]).toMatchObject({ name: 'constructor', known: false });
+  });
+
   it('counts the strength sessions the member will be asked to tag', () => {
     const s = summarize(replay);
     expect(s.strengthSessions).toBe(s.sports.find((x) => x.name === 'weightlifting')!.count);

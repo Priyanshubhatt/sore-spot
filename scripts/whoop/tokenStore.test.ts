@@ -26,10 +26,20 @@ describe('token storage', () => {
     expect(loadTokens(memory(null))).toBeNull();
   });
 
-  it('treats a file that is not valid tokens as no sign-in, so the script signs in again', () => {
+  it('counts a file that is not valid tokens as no sign-in, so the script signs in again', () => {
     for (const bad of ['not json', '{}', '{"access_token":1}', '{"access_token":"a"}', 'null']) {
       expect(loadTokens(memory(bad)), bad).toBeNull();
     }
+  });
+
+  it('counts a file that cannot be read as no sign-in', () => {
+    const unreadable: TokenFile = {
+      read: () => {
+        throw new Error('EACCES');
+      },
+      write: () => undefined,
+    };
+    expect(loadTokens(unreadable)).toBeNull();
   });
 
   it('copes with a save that has no refresh token', () => {

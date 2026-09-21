@@ -19,6 +19,8 @@ export interface Window {
 
 const PAGE_SIZE = 25;
 const MAX_PAGES = 400;
+/** A server asking for a long wait is not obeyed beyond this: the person would think the script had hung. */
+const MAX_WAIT_MS = 60_000;
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -54,12 +56,16 @@ export async function fetchAllPages(path: string, window: Window, ctx: ApiContex
         const body = json as { records?: unknown; next_token?: unknown };
         if (!Array.isArray(body.records)) throw new Error(`WHOOP returned a page of ${path} with no "records" list.`);
         records.push(...body.records);
-        nextToken = typeof body.next_token === 'string' && body.next_token !== '' ? body.next_token : undefined;
+        const following = typeof body.next_token === 'string' && body.next_token !== '' ? body.next_token : undefined;
+        if (following !== undefined && following === nextToken) {
+          throw new Error(`WHOOP kept returning the same page token for ${path}; stopping instead of looping.`);
+        }
+        nextToken = following;
         break;
       }
       if (res.status === 429 && attempt < maxRetries) {
         const retryAfter = Number(res.headers.get('retry-after'));
-        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000);
+        await sleep(Math.min(MAX_WAIT_MS, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000));
         attempt++;
         continue;
       }

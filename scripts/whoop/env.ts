@@ -38,7 +38,7 @@ export function readWhoopEnv(vars: Record<string, string | undefined>): WhoopEnv
 }
 
 /** The local address the sign-in redirect comes back to. Only http://localhost is accepted. */
-export function callbackTarget(redirectUri: string): { port: number; path: string } {
+export function callbackTarget(redirectUri: string): { host: string; port: number; path: string } {
   let url: URL;
   try {
     url = new URL(redirectUri);
@@ -49,14 +49,21 @@ export function callbackTarget(redirectUri: string): { port: number; path: strin
     throw new Error('WHOOP_REDIRECT_URI must be an http://localhost address for this script to catch the sign-in redirect.');
   }
   const port = url.port === '' ? 80 : Number(url.port);
-  return { port, path: url.pathname };
+  return { host: url.hostname, port, path: url.pathname };
 }
 
-/** Removes every secret from text before it is printed or put in an error. */
+/** The ways one secret can appear if a server echoes a request back: as sent, URL-encoded, form-encoded, or JSON-escaped. */
+function forms(secret: string): string[] {
+  const url = encodeURIComponent(secret);
+  return [secret, url, url.replace(/%20/g, '+'), JSON.stringify(secret).slice(1, -1)];
+}
+
+/** Removes every secret, in each form it can appear in, from text before it is printed or put in an error. */
 export function redact(text: string, secrets: readonly string[]): string {
   let out = text;
   for (const secret of secrets) {
-    if (secret.length >= 4) out = out.split(secret).join('[redacted]');
+    if (secret.length < 4) continue;
+    for (const form of new Set(forms(secret))) out = out.split(form).join('[redacted]');
   }
   return out;
 }

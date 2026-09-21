@@ -53,6 +53,13 @@ describe('fetchAllPages', () => {
     expect(waits).toEqual([7000, 2 ** 1 * 1000]);
   });
 
+  it('never waits longer than a minute on a Retry-After, however large', async () => {
+    const waits: number[] = [];
+    const { fetchFn } = scriptedFetch([respond(429, 'x', { 'Retry-After': '86400' }), respond(200, { records: [] })]);
+    await fetchAllPages('/v2/recovery', window, ctx(fetchFn, { sleep: async (ms: number) => void waits.push(ms) }));
+    expect(waits).toEqual([60_000]);
+  });
+
   it('gives up after the retry limit with the status', async () => {
     const { fetchFn } = scriptedFetch(Array.from({ length: 3 }, () => respond(429, 'no')));
     const err = await failure(fetchAllPages('/v2/recovery', window, ctx(fetchFn, { maxRetries: 2 })));
@@ -80,8 +87,18 @@ describe('fetchAllPages', () => {
     await expect(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(200, { data: [] })]).fetchFn))).rejects.toThrow(/no "records"/);
   });
 
+  it('stops at once when a page repeats the token it was fetched with', async () => {
+    const { fetchFn, calls } = scriptedFetch([
+      respond(200, { records: [{ id: 'a' }], next_token: 'same' }),
+      respond(200, { records: [{ id: 'b' }], next_token: 'same' }),
+    ]);
+    await expect(fetchAllPages('/v2/recovery', window, ctx(fetchFn))).rejects.toThrow(/same page token/);
+    expect(calls).toHaveLength(2);
+  });
+
   it('stops if the paging never ends, instead of looping forever', async () => {
-    const fetchFn = async () => respond(200, { records: [], next_token: 'again' });
+    let n = 0;
+    const fetchFn = async () => respond(200, { records: [], next_token: `t${n++}` });
     await expect(fetchAllPages('/v2/recovery', window, ctx(fetchFn))).rejects.toThrow(/Stopped after/);
   });
 });
