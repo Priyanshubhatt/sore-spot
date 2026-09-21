@@ -1,0 +1,80 @@
+import { redact } from './env';
+import { DEFAULT_ENDPOINTS, WhoopHttpError, type Endpoints, type FetchLike } from './http';
+
+export interface ApiContext {
+  fetchFn: FetchLike;
+  accessToken: string;
+  endpoints?: Endpoints;
+  /** Waits between retries; tests pass a no-op. */
+  sleep?: (ms: number) => Promise<void>;
+  maxRetries?: number;
+  /** Anything that must never appear in a message (the token, the client secret). */
+  secrets?: readonly string[];
+}
+
+export interface Window {
+  start: Date;
+  end: Date;
+}
+
+const PAGE_SIZE = 25;
+const MAX_PAGES = 400;
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Reads every page of a WHOOP v2 collection (`records` plus `next_token`) for a time window. */
+export async function fetchAllPages(path: string, window: Window, ctx: ApiContext): Promise<unknown[]> {
+  const base = (ctx.endpoints ?? DEFAULT_ENDPOINTS).apiBase;
+  const sleep = ctx.sleep ?? wait;
+  const maxRetries = ctx.maxRetries ?? 5;
+  const secrets = [ctx.accessToken, ...(ctx.secrets ?? [])];
+  const records: unknown[] = [];
+  let nextToken: string | undefined;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const url = new URL(`${base}${path}`);
+    url.searchParams.set('limit', String(PAGE_SIZE));
+    url.searchParams.set('start', window.start.toISOString());
+    url.searchParams.set('end', window.end.toISOString());
+    if (nextToken) url.searchParams.set('nextToken', nextToken);
+
+    let attempt = 0;
+    for (;;) {
+      const res = await ctx.fetchFn(url.toString(), {
+        headers: { authorization: `Bearer ${ctx.accessToken}`, accept: 'application/json' },
+      });
+      const text = await res.text();
+      if (res.ok) {
+        let json: unknown;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          throw new Error(`WHOOP returned a page of ${path} that is not JSON.`);
+        }
+        const body = json as { records?: unknown; next_token?: unknown };
+        if (!Array.isArray(body.records)) throw new Error(`WHOOP returned a page of ${path} with no "records" list.`);
+        records.push(...body.records);
+        nextToken = typeof body.next_token === 'string' && body.next_token !== '' ? body.next_token : undefined;
+        break;
+      }
+      if (res.status === 429 && attempt < maxRetries) {
+        const retryAfter = Number(res.headers.get('retry-after'));
+        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000);
+        attempt++;
+        continue;
+      }
+      if (res.status === 401) {
+        throw new WhoopHttpError(401, 'WHOOP rejected the access token (HTTP 401). Run the export again to sign in.');
+      }
+      if (res.status === 403) {
+        throw new WhoopHttpError(403, `WHOOP refused ${path} (HTTP 403): the app may lack the scope for it.`);
+      }
+      throw new WhoopHttpError(res.status, `WHOOP returned HTTP ${res.status} for ${path}: ${redact(text, secrets).slice(0, 300)}`);
+    }
+    if (!nextToken) return records;
+  }
+  throw new Error(`Stopped after ${MAX_PAGES} pages of ${path}; something is wrong with the paging.`);
+}
+
+export const fetchWorkouts = (window: Window, ctx: ApiContext) => fetchAllPages('/v2/activity/workout', window, ctx);
+export const fetchRecovery = (window: Window, ctx: ApiContext) => fetchAllPages('/v2/recovery', window, ctx);
