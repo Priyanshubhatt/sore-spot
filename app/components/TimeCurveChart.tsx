@@ -15,7 +15,7 @@ import { colors } from '../theme';
 
 const LINE = colors.accent;
 const FILL = colors.accentFill;
-const AXIS = colors.border;
+const AXIS = colors.muted;
 const TEXT = colors.muted;
 const HEIGHT = 194;
 // SVG text does not inherit the app font on web, where it would fall back to a serif face.

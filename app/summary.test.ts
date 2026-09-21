@@ -3,7 +3,7 @@ import { syntheticReplay } from '../data/replay.synthetic';
 import { MUSCLES, type DayForecast, type RiskBand } from '../engine';
 import { DEMO_AS_OF } from './config';
 import { buildForecastState } from './forecastState';
-import { summarize, summaryLabel } from './summary';
+import { SUMMARY_CAPTION, summarize, summaryLabel } from './summary';
 
 const day = (bands: Partial<Record<string, RiskBand>>): DayForecast =>
   Object.fromEntries(MUSCLES.map((m) => [m, { band: bands[m] ?? 'low', drivers: [] }])) as unknown as DayForecast;
@@ -40,8 +40,11 @@ describe('summarize', () => {
 describe('summaryLabel', () => {
   it('reads each count with its band name and pluralizes correctly', () => {
     expect(summaryLabel(summarize(day({ quads: 'high', glutes: 'high', calves: 'moderate' })), 'Now')).toBe(
-      'Now: 2 muscles High, 1 muscle Moderate, 9 muscles Low.',
+      'Predicted soreness, Now: 2 muscles High, 1 muscle Moderate, 9 muscles Low.',
     );
-    expect(summaryLabel(summarize(day({})), '+6d (Fri)')).toBe('+6d (Fri): 0 muscles High, 0 muscles Moderate, 12 muscles Low.');
+    expect(summaryLabel(summarize(day({})), '+6d (Fri)')).toBe(
+      'Predicted soreness, +6d (Fri): 0 muscles High, 0 muscles Moderate, 12 muscles Low.',
+    );
+    expect(SUMMARY_CAPTION).toBe('Predicted soreness');
   });
 });

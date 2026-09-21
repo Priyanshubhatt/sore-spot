@@ -3,7 +3,8 @@ import type { TextStyle } from 'react-native';
 /**
  * The one place the look is defined: a dark, high-contrast theme in the spirit of modern fitness
  * apps. It borrows no brand assets: no logo, wordmark or typeface. Screens use these tokens, not
- * hex codes, and app/theme.test.ts checks the contrast of every pairing that carries text.
+ * hex code; app/theme.test.ts checks the contrast of every pairing that carries text. app.json repeats
+ * `bg` as the root and web background (JSON cannot import it), and a test keeps the two in step.
  */
 export const colors = {
   bg: '#0A0B0D',

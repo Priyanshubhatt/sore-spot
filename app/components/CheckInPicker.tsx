@@ -40,7 +40,7 @@ export default function CheckInPicker({ enabled, level, message, onChange }: Pro
 
 const styles = StyleSheet.create({
   wrap: { gap: space.sm },
-  prompt: { ...type.label, color: colors.dim },
+  prompt: { ...type.strong },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   chip: { paddingVertical: space.sm, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.card },
   chipOn: { backgroundColor: colors.accent },

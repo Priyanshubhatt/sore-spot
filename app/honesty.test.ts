@@ -144,8 +144,13 @@ describe('the look stays on the theme', () => {
     const shell = { rel: '../App.tsx', text: readFileSync(join(__dirname, '..', 'App.tsx'), 'utf8') };
     for (const f of [...files, shell]) {
       if (f.rel === 'theme.ts') continue;
-      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(/);
+      expect(f.text, f.rel).not.toMatch(/#[0-9A-Fa-f]{3,8}\b|rgba?\(|hsla?\(|['"](white|black|transparent|red|green|blue|gray|grey)['"]/);
     }
+  });
+
+  it('keeps the honesty caveat and the check-in question in sentence case, not in the small uppercase tag style', () => {
+    expect(text('components/MoveList.tsx')).toMatch(/heading: { \.\.\.type\.strong }/);
+    expect(text('components/CheckInPicker.tsx')).toMatch(/prompt: { \.\.\.type\.strong }/);
   });
 
   it('hides the decorative tab icons from screen readers on every platform, and keeps the tab label', () => {
@@ -164,6 +169,8 @@ describe('the look stays on the theme', () => {
     expect(text('BodyMapScreen.tsx')).toMatch(/<SummaryStrip day={dayForecast} dayText={dayText} \/>/);
     expect(text('BodyMapScreen.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/{BAND_LABELS\[band\]}/);
+    // The strip names what it counts, so "4 High" cannot be taken for a health or recovery score.
+    expect(text('components/SummaryStrip.tsx')).toMatch(/{SUMMARY_CAPTION}/);
     expect(text('components/SummaryStrip.tsx')).toMatch(/accessibilityLabel={summaryLabel\(summary, dayText\)}/);
   });
 });

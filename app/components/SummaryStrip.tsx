@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { DayForecast, RiskBand } from '../../engine';
 import { bandColor } from '../body/colors';
 import { BAND_LABELS } from '../copy';
-import { summarize, summaryLabel } from '../summary';
+import { SUMMARY_CAPTION, summarize, summaryLabel } from '../summary';
 import { colors, radius, space, type } from '../theme';
 
 const ORDER: readonly RiskBand[] = ['high', 'moderate', 'low'];
@@ -18,21 +18,23 @@ export default function SummaryStrip({ day, dayText }: Props) {
   const summary = summarize(day);
   return (
     <View accessible accessibilityLabel={summaryLabel(summary, dayText)} style={styles.card}>
-      {ORDER.map((band) => (
-        <View key={band} style={styles.stat}>
-          <Text style={styles.number}>{String(summary[band].length)}</Text>
-          <View style={[styles.bar, { backgroundColor: bandColor(band) }]} />
-          <Text style={styles.label}>{BAND_LABELS[band]}</Text>
-        </View>
-      ))}
+      <Text style={styles.caption}>{SUMMARY_CAPTION}</Text>
+      <View style={styles.stats}>
+        {ORDER.map((band) => (
+          <View key={band} style={styles.stat}>
+            <Text style={styles.number}>{String(summary[band].length)}</Text>
+            <View style={[styles.bar, { backgroundColor: bandColor(band) }]} />
+            <Text style={styles.label}>{BAND_LABELS[band]}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    gap: space.md,
+    gap: space.sm,
     paddingVertical: space.md,
     paddingHorizontal: space.lg,
     borderRadius: radius.md,
@@ -40,6 +42,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  caption: { ...type.label, textAlign: 'center' },
+  stats: { flexDirection: 'row', gap: space.md },
   stat: { flex: 1, alignItems: 'center', gap: 6 },
   number: { ...type.display, fontSize: 30, lineHeight: 34 },
   bar: { width: 36, height: 4, borderRadius: 2 },

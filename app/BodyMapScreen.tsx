@@ -29,7 +29,7 @@ export default function BodyMapScreen({ spot }: Props) {
   const [day, setDay] = useState(0);
   const [selected, setSelected] = useState<Muscle | null>(null);
 
-  const mapWidth = Math.min(screenWidth - 48, 236);
+  const mapWidth = Math.min(screenWidth - 48, 260);
   const dayForecast = forecast.byDay[day];
   const dayText = `${dayLabel(day)} (${weekdayLabel(asOf, day)})`;
   const selectedCheckIn = selected ? checkIns[selected] : undefined;

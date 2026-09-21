@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { contrastRatio, luminance } from './contrast';
 import { colors, radius, space, type } from './theme';
@@ -18,6 +20,15 @@ describe('contrast helper', () => {
 
   it('is symmetric', () => {
     expect(contrastRatio('#123456', '#ABCDEF')).toBeCloseTo(contrastRatio('#ABCDEF', '#123456'), 10);
+  });
+});
+
+describe('the app config', () => {
+  it('paints the root and the web page in the theme background, so a dark app never flashes white', () => {
+    const config = JSON.parse(readFileSync(join(__dirname, '..', 'app.json'), 'utf8')).expo;
+    expect(config.userInterfaceStyle).toBe('dark');
+    expect(config.backgroundColor).toBe(colors.bg);
+    expect(config.web.backgroundColor).toBe(colors.bg);
   });
 });
 

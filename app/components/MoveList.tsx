@@ -55,7 +55,7 @@ export default function MoveList({ recommendation }: { recommendation: Recommend
 const styles = StyleSheet.create({
   wrap: { gap: space.md },
   section: { gap: 6 },
-  heading: { ...type.label, color: colors.dim },
+  heading: { ...type.strong },
   evidenceNote: { ...type.small },
   move: { gap: 2, paddingVertical: space.xs },
   moveHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
