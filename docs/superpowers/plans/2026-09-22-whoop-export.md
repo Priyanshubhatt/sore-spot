@@ -30,7 +30,7 @@ Every task's requirements include these, copied from the spec:
 
 **Line endings:** this repo's working tree has Windows line endings. For every file below marked "replace whole file", overwrite the entire file with the block shown using the file-writing tool. Do not use search-and-replace edits: multi-line matches silently fail on Windows line endings.
 
-**How these files were produced:** every block was first run in a scratch copy: 377 Vitest tests passing, `tsc --strict` clean, `expo export --platform web` building, the 214-check browser drive passing, the command's guard rails smoke-tested in temporary folders, and 23 safety-critical lines mutation-checked (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
+**How these files were produced:** every block was first run in a scratch copy: 401 Vitest tests passing (400 plus one file-mode test that is skipped on Windows), `tsc --strict` clean, `expo export --platform web` building, the 214-check browser drive passing, the command's guard rails smoke-tested in temporary folders, and 49 safety-critical lines mutation-checked in three passes (each broken on purpose and caught). Copy the blocks exactly, including any non-ASCII characters.
 
 ## File Structure
 
@@ -40,8 +40,8 @@ engine/replay.asof.test.ts                           its tests                  
 scripts/whoop/env.ts, http.ts, auth.ts, api.ts, build.ts, safety.ts, tokenStore.ts, fakes.ts          (Task 1)
 scripts/whoop/env.test.ts, auth.test.ts, api.test.ts, build.test.ts, safety.test.ts, tokenStore.test.ts (Task 1)
 vitest.config.ts, package.json (whole files), package-lock.json (by npm install)                        (Task 1)
-scripts/whoop/callback.ts, run.ts, scripts/export-whoop.ts                                              (Task 2)
-scripts/whoop/callback.test.ts, run.test.ts, cli.test.ts                                                (Task 2)
+scripts/whoop/callback.ts, files.ts, run.ts, scripts/export-whoop.ts                                    (Task 2)
+scripts/whoop/callback.test.ts, files.test.ts, run.test.ts, cli.test.ts                                      (Task 2)
 app/config.ts, app/useSoreSpot.ts, app/planCopy.ts, App.tsx (whole files)   export time as "now", the real-data banner   (Task 3)
 app/config.test.ts, app/honesty.test.ts, app/docs.test.ts (whole/new)                                   (Task 3)
 README.md, docs/DEMO.md (whole files)                how to use your own data                        (Task 3)
@@ -61,7 +61,7 @@ README.md, docs/DEMO.md (whole files)                how to use your own data   
 - Consumes: `parseReplay` from `engine/replay.ts`; `SPORT_MUSCLE_MAP`, `STRENGTH_SPORTS`, `normalizeSport` from `engine/sportMuscleMap.ts`; `syntheticReplay` from `data/replay.synthetic.ts` (tests only).
 - Produces (used by Task 2):
   - `engine/types.ts`: `ReplayFile.asOf?: string`; `engine/replay.ts`: `parseReplay` validates and keeps it.
-  - `scripts/whoop/env.ts`: `REQUIRED_VARS`, `WhoopEnv`, `parseEnvFile`, `readWhoopEnv`, `callbackTarget`, `redact`.
+  - `scripts/whoop/env.ts`: `REQUIRED_VARS`, `WhoopEnv`, `parseEnvFile`, `readWhoopEnv`, `callbackTarget` (returns `{ host, port, path }`), `redact` (also removes URL-encoded, form-encoded and JSON-escaped forms of each secret).
   - `scripts/whoop/http.ts`: `FetchResponse`, `FetchLike`, `WhoopHttpError`, `Endpoints`, `DEFAULT_ENDPOINTS`, `SCOPES`.
   - `scripts/whoop/auth.ts`: `Tokens`, `makeState`, `buildAuthUrl`, `parseTokenResponse`, `isFresh`, `exchangeCode`, `refreshTokens`.
   - `scripts/whoop/api.ts`: `ApiContext`, `Window`, `fetchAllPages`, `fetchWorkouts`, `fetchRecovery`.
@@ -100,7 +100,7 @@ describe('the export time (asOf) in a replay file', () => {
   });
 
   it('is rejected when it is not a date string', () => {
-    for (const bad of ['yesterday', '', 123, null, {}]) {
+    for (const bad of ['yesterday', '', '1', '2026-09-22', 123, null, {}]) {
       expect(() => parseReplay({ ...syntheticReplay, asOf: bad }), String(bad)).toThrow(/asOf/);
     }
   });
@@ -165,8 +165,8 @@ describe('readWhoopEnv', () => {
 
 describe('callbackTarget', () => {
   it('reads the port and path of a localhost redirect', () => {
-    expect(callbackTarget('http://localhost:3000/callback')).toEqual({ port: 3000, path: '/callback' });
-    expect(callbackTarget('http://127.0.0.1:8123/cb')).toEqual({ port: 8123, path: '/cb' });
+    expect(callbackTarget('http://localhost:3000/callback')).toEqual({ host: 'localhost', port: 3000, path: '/callback' });
+    expect(callbackTarget('http://127.0.0.1:8123/cb')).toEqual({ host: '127.0.0.1', port: 8123, path: '/cb' });
   });
 
   it('refuses a redirect the script could not catch', () => {
@@ -179,6 +179,15 @@ describe('callbackTarget', () => {
 describe('redact', () => {
   it('removes every occurrence of every secret', () => {
     expect(redact('a SECRET1234 b SECRET1234 c tok-abcdef', ['SECRET1234', 'tok-abcdef'])).toBe('a [redacted] b [redacted] c [redacted]');
+  });
+
+  it('also removes a secret that was URL-encoded, form-encoded or JSON-escaped in an echoed request', () => {
+    const secret = 'p@ss word/+"x';
+    const echoed = [encodeURIComponent(secret), encodeURIComponent(secret).replace(/%20/g, '+'), JSON.stringify(secret).slice(1, -1)].join(' | ');
+    const out = redact(`echo: ${secret} | ${echoed}`, [secret]);
+    expect(out).not.toContain('word');
+    expect(out).not.toContain('%40');
+    expect(out.match(/\[redacted\]/g)).toHaveLength(4);
   });
 
   it('ignores empty or very short secrets, so it never blanks ordinary text', () => {
@@ -238,7 +247,7 @@ describe('token responses', () => {
     expect(() => parseTokenResponse(null, NOW)).toThrow(/not an object/);
   });
 
-  it('treats a token as fresh only while more than a minute is left', () => {
+  it('counts a token as fresh only while more than a minute is left', () => {
     const t = parseTokenResponse(tokenJson, NOW);
     expect(isFresh(t, NOW)).toBe(true);
     expect(isFresh(t, NOW + 3_540_001)).toBe(false);
@@ -271,6 +280,12 @@ describe('exchanging and refreshing', () => {
     expect(t.refresh_token).toBe('ref-ROTATED');
     const body = Object.fromEntries(new URLSearchParams(calls[0].body));
     expect(body).toMatchObject({ grant_type: 'refresh_token', refresh_token: 'ref-222222', scope: 'offline' });
+  });
+
+  it('keeps the old refresh token when a refresh response does not bring a new one', async () => {
+    const { refresh_token: _dropped, ...withoutRefresh } = tokenJson;
+    const { fetchFn } = scriptedFetch([respond(200, withoutRefresh)]);
+    expect((await refreshTokens(ENV, 'ref-222222', fetchFn, NOW)).refresh_token).toBe('ref-222222');
   });
 
   it('reports a refused code exchange with its status but never with the secret, the client id or the code', async () => {
@@ -354,6 +369,13 @@ describe('fetchAllPages', () => {
     expect(waits).toEqual([7000, 2 ** 1 * 1000]);
   });
 
+  it('never waits longer than a minute on a Retry-After, however large', async () => {
+    const waits: number[] = [];
+    const { fetchFn } = scriptedFetch([respond(429, 'x', { 'Retry-After': '86400' }), respond(200, { records: [] })]);
+    await fetchAllPages('/v2/recovery', window, ctx(fetchFn, { sleep: async (ms: number) => void waits.push(ms) }));
+    expect(waits).toEqual([60_000]);
+  });
+
   it('gives up after the retry limit with the status', async () => {
     const { fetchFn } = scriptedFetch(Array.from({ length: 3 }, () => respond(429, 'no')));
     const err = await failure(fetchAllPages('/v2/recovery', window, ctx(fetchFn, { maxRetries: 2 })));
@@ -381,8 +403,18 @@ describe('fetchAllPages', () => {
     await expect(fetchAllPages('/v2/recovery', window, ctx(scriptedFetch([respond(200, { data: [] })]).fetchFn))).rejects.toThrow(/no "records"/);
   });
 
+  it('stops at once when a page repeats the token it was fetched with', async () => {
+    const { fetchFn, calls } = scriptedFetch([
+      respond(200, { records: [{ id: 'a' }], next_token: 'same' }),
+      respond(200, { records: [{ id: 'b' }], next_token: 'same' }),
+    ]);
+    await expect(fetchAllPages('/v2/recovery', window, ctx(fetchFn))).rejects.toThrow(/same page token/);
+    expect(calls).toHaveLength(2);
+  });
+
   it('stops if the paging never ends, instead of looping forever', async () => {
-    const fetchFn = async () => respond(200, { records: [], next_token: 'again' });
+    let n = 0;
+    const fetchFn = async () => respond(200, { records: [], next_token: `t${n++}` });
     await expect(fetchAllPages('/v2/recovery', window, ctx(fetchFn))).rejects.toThrow(/Stopped after/);
   });
 });
@@ -459,6 +491,12 @@ describe('summarize and formatSummary', () => {
     expect(s.sports.find((x) => x.name === 'kayaking')).toMatchObject({ count: 1, known: false });
     expect(s.sports.find((x) => x.name === 'running')).toMatchObject({ known: true, strength: false });
     expect(s.sports.find((x) => x.name === 'weightlifting')).toMatchObject({ known: true, strength: true });
+  });
+
+  it('does not take an inherited object name such as "constructor" for a sport the model knows', () => {
+    const odd = { ...(workouts[0] as object), id: 'odd-1', sport_name: 'constructor' };
+    const s = summarize(buildReplay({ workouts: [odd], recovery: [], exportedAt: EXPORTED_AT }));
+    expect(s.sports[0]).toMatchObject({ name: 'constructor', known: false });
   });
 
   it('counts the strength sessions the member will be asked to tag', () => {
@@ -581,10 +619,20 @@ describe('token storage', () => {
     expect(loadTokens(memory(null))).toBeNull();
   });
 
-  it('treats a file that is not valid tokens as no sign-in, so the script signs in again', () => {
+  it('counts a file that is not valid tokens as no sign-in, so the script signs in again', () => {
     for (const bad of ['not json', '{}', '{"access_token":1}', '{"access_token":"a"}', 'null']) {
       expect(loadTokens(memory(bad)), bad).toBeNull();
     }
+  });
+
+  it('counts a file that cannot be read as no sign-in', () => {
+    const unreadable: TokenFile = {
+      read: () => {
+        throw new Error('EACCES');
+      },
+      write: () => undefined,
+    };
+    expect(loadTokens(unreadable)).toBeNull();
   });
 
   it('copes with a save that has no refresh token', () => {
@@ -801,7 +849,7 @@ export function parseReplay(raw: unknown): ReplayFile {
   const workouts = o.workouts.map(checkWorkout);
   const replay: ReplayFile = { synthetic: o.synthetic, workouts };
   if (o.asOf !== undefined) {
-    if (typeof o.asOf !== 'string' || Number.isNaN(Date.parse(o.asOf))) {
+    if (typeof o.asOf !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(o.asOf) || Number.isNaN(Date.parse(o.asOf))) {
       throw new Error('Invalid replay file: "asOf" must be an ISO date string');
     }
     replay.asOf = o.asOf;
@@ -856,7 +904,7 @@ export function readWhoopEnv(vars: Record<string, string | undefined>): WhoopEnv
 }
 
 /** The local address the sign-in redirect comes back to. Only http://localhost is accepted. */
-export function callbackTarget(redirectUri: string): { port: number; path: string } {
+export function callbackTarget(redirectUri: string): { host: string; port: number; path: string } {
   let url: URL;
   try {
     url = new URL(redirectUri);
@@ -867,14 +915,21 @@ export function callbackTarget(redirectUri: string): { port: number; path: strin
     throw new Error('WHOOP_REDIRECT_URI must be an http://localhost address for this script to catch the sign-in redirect.');
   }
   const port = url.port === '' ? 80 : Number(url.port);
-  return { port, path: url.pathname };
+  return { host: url.hostname, port, path: url.pathname };
 }
 
-/** Removes every secret from text before it is printed or put in an error. */
+/** The ways one secret can appear if a server echoes a request back: as sent, URL-encoded, form-encoded, or JSON-escaped. */
+function forms(secret: string): string[] {
+  const url = encodeURIComponent(secret);
+  return [secret, url, url.replace(/%20/g, '+'), JSON.stringify(secret).slice(1, -1)];
+}
+
+/** Removes every secret, in each form it can appear in, from text before it is printed or put in an error. */
 export function redact(text: string, secrets: readonly string[]): string {
   let out = text;
   for (const secret of secrets) {
-    if (secret.length >= 4) out = out.split(secret).join('[redacted]');
+    if (secret.length < 4) continue;
+    for (const form of new Set(forms(secret))) out = out.split(form).join('[redacted]');
   }
   return out;
 }
@@ -1030,7 +1085,7 @@ export function refreshTokens(
     fetchFn,
     now,
     endpoints,
-  );
+  ).then((t) => ({ ...t, refresh_token: t.refresh_token ?? refreshToken }));
 }
 ```
 
@@ -1058,6 +1113,8 @@ export interface Window {
 
 const PAGE_SIZE = 25;
 const MAX_PAGES = 400;
+/** A server asking for a long wait is not obeyed beyond this: the person would think the script had hung. */
+const MAX_WAIT_MS = 60_000;
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -1093,12 +1150,16 @@ export async function fetchAllPages(path: string, window: Window, ctx: ApiContex
         const body = json as { records?: unknown; next_token?: unknown };
         if (!Array.isArray(body.records)) throw new Error(`WHOOP returned a page of ${path} with no "records" list.`);
         records.push(...body.records);
-        nextToken = typeof body.next_token === 'string' && body.next_token !== '' ? body.next_token : undefined;
+        const following = typeof body.next_token === 'string' && body.next_token !== '' ? body.next_token : undefined;
+        if (following !== undefined && following === nextToken) {
+          throw new Error(`WHOOP kept returning the same page token for ${path}; stopping instead of looping.`);
+        }
+        nextToken = following;
         break;
       }
       if (res.status === 429 && attempt < maxRetries) {
         const retryAfter = Number(res.headers.get('retry-after'));
-        await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000);
+        await sleep(Math.min(MAX_WAIT_MS, Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 2 ** attempt * 1000));
         attempt++;
         continue;
       }
@@ -1162,7 +1223,7 @@ export function buildReplay(input: ExportInput): ReplayFile {
     input.recovery,
     (r) => `${(r as { cycle_id?: unknown })?.cycle_id}:${(r as { sleep_id?: unknown })?.sleep_id}`,
   ).sort((a, b) => createdMs(a) - createdMs(b));
-  // Round-trip through JSON so what is validated is exactly what will be written.
+  // Round-trip through JSON so what is checked is exactly what will be written.
   const file = JSON.parse(JSON.stringify({ synthetic: false, asOf: input.exportedAt.toISOString(), workouts, recovery }));
   return parseReplay(file);
 }
@@ -1192,7 +1253,7 @@ export function summarize(replay: ReplayFile): ExportSummary {
     .map(([name, count]) => {
       const key = normalizeSport(name);
       const strength = STRENGTH_SPORTS.has(key);
-      return { name, count, known: strength || key in SPORT_MUSCLE_MAP, strength };
+      return { name, count, known: strength || Object.hasOwn(SPORT_MUSCLE_MAP, key), strength };
     })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
   const starts = replay.workouts.map((w) => w.start).sort();
@@ -1275,9 +1336,9 @@ export interface TokenFile {
 
 /** The saved tokens, or null when there is no usable file (missing, unreadable or not in the expected shape). */
 export function loadTokens(file: TokenFile): Tokens | null {
-  const text = file.read();
-  if (text === null) return null;
   try {
+    const text = file.read();
+    if (text === null) return null;
     const o = JSON.parse(text) as Record<string, unknown>;
     if (typeof o.access_token !== 'string' || typeof o.expires_at !== 'number') return null;
     return {
@@ -1417,7 +1478,7 @@ Then run `npm install` so `package-lock.json` records `tsx` (this is the only co
 - [ ] **Step 4: Run the whole suite and typecheck**
 
 Run: `npm test && npm run typecheck`
-Expected: 37 test files, 345 tests pass (the 290 existing plus 3 replay, 10 env, 12 auth, 9 api, 12 build, 5 safety and 4 token-store tests); typecheck prints no errors.
+Expected: 37 test files, 351 tests pass (the 290 existing plus 3 replay, 11 env, 13 auth, 11 api, 13 build, 5 safety and 5 token-store tests); typecheck prints no errors.
 
 - [ ] **Step 5: Prove the guards can fail**
 
@@ -1456,12 +1517,12 @@ EOF
 ### Task 2: The sign-in catcher, the run and the command
 
 **Files:**
-- Create: `scripts/whoop/callback.ts`, `scripts/whoop/run.ts`, `scripts/export-whoop.ts`
-- Test: `scripts/whoop/callback.test.ts`, `scripts/whoop/run.test.ts`, `scripts/whoop/cli.test.ts`
+- Create: `scripts/whoop/callback.ts`, `scripts/whoop/files.ts`, `scripts/whoop/run.ts`, `scripts/export-whoop.ts`
+- Test: `scripts/whoop/callback.test.ts`, `scripts/whoop/files.test.ts`, `scripts/whoop/run.test.ts`, `scripts/whoop/cli.test.ts`
 
 **Interfaces:**
 - Consumes: everything Task 1 produces.
-- Produces: `waitForCallback({ port, path, expectedState, timeoutMs })` resolving with the authorization code; `RunDeps`, `runExport(deps)` returning an `ExportSummary`; the command `npm run export-whoop`.
+- Produces: `waitForCallback({ port, host?, path, expectedState, timeoutMs })` resolving with the authorization code (a redirect with the wrong state is ignored, not fatal); `writePrivate(path, text)` (owner-only file write); `RunDeps`, `runExport(deps)` returning an `ExportSummary` (renews a saved sign-in that WHOOP rejects, once; refuses an export with no workouts); the command `npm run export-whoop`.
 
 `run.ts` takes every outside thing as a dependency (fetch, clock, token file, replay writer, browser opener, redirect catcher, logger), so the tests run the whole flow against a fake WHOOP. `export-whoop.ts` is the thin real wiring; **do not run it** (it would open a browser and ask for a sign-in). Its guard rails are checked by the smoke test in Step 4.
 
@@ -1470,7 +1531,7 @@ EOF
 Create `scripts/whoop/callback.test.ts`:
 
 ```ts
-import { createServer } from 'node:net';
+import { connect, createServer } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import { waitForCallback } from './callback';
 import { failure, freePort, hit } from './fakes';
@@ -1496,26 +1557,85 @@ describe('waitForCallback', () => {
     expect(await code).toBe('c2');
   });
 
-  it('rejects a redirect with a different state, so a forged or stale sign-in is not used', async () => {
+  it('ignores a redirect with a different or missing state and keeps waiting, so a stray page cannot end or hijack the sign-in', async () => {
     const port = await freePort();
-    const result = failure(waitForCallback(options(port)));
-    const page = await hit(`http://localhost:${port}/callback?code=evil&state=WRONGSTATE`);
-    expect(page.status).toBe(400);
-    expect((await result).message).toMatch(/different state/);
+    const code = waitForCallback(options(port));
+    const wrong = await hit(`http://localhost:${port}/callback?code=evil&state=WRONGSTATE`);
+    const none = await hit(`http://localhost:${port}/callback?code=evil`);
+    expect([wrong.status, none.status]).toEqual([400, 400]);
+    expect(wrong.text).toMatch(/did not match/);
+    // Still waiting: the real redirect that follows is the one that counts.
+    await hit(`http://localhost:${port}/callback?code=the-real-code&state=${STATE}`);
+    expect(await code).toBe('the-real-code');
   });
 
-  it('rejects a redirect with no state at all', async () => {
+  it('cannot be cancelled by a stray denial that lacks the state', async () => {
     const port = await freePort();
-    const result = failure(waitForCallback(options(port)));
-    await hit(`http://localhost:${port}/callback?code=evil`);
-    expect((await result).message).toMatch(/different state/);
+    const code = waitForCallback(options(port));
+    await hit(`http://localhost:${port}/callback?error=access_denied`);
+    await hit(`http://localhost:${port}/callback?code=ok&state=${STATE}`);
+    expect(await code).toBe('ok');
   });
 
-  it('rejects when WHOOP reports that the sign-in was denied', async () => {
+  it('rejects when WHOOP reports that the sign-in was denied (with the right state)', async () => {
     const port = await freePort();
     const result = failure(waitForCallback(options(port)));
     await hit(`http://localhost:${port}/callback?error=access_denied&state=${STATE}`);
     expect((await result).message).toMatch(/access_denied/);
+  });
+
+  it('prints only a short, plain reason from a denial, never control codes or long text', async () => {
+    const port = await freePort();
+    const result = failure(waitForCallback(options(port)));
+    const hostile = encodeURIComponent('\u001b[31mBAD\u001b[0m' + 'x'.repeat(200));
+    await hit(`http://localhost:${port}/callback?error=${hostile}&state=${STATE}`);
+    const message = (await result).message;
+    expect(message).not.toMatch(/[\u0000-\u001f]/);
+    expect(message.length).toBeLessThan(120);
+  });
+
+  it('never puts anything from the request into the page it returns', async () => {
+    const port = await freePort();
+    const code = waitForCallback(options(port));
+    const script = encodeURIComponent('<script>alert(1)</script>');
+    const page = await hit(`http://localhost:${port}/callback?code=${script}&state=${STATE}`);
+    await code;
+    expect(page.text).not.toContain('script');
+    expect(page.text).not.toContain('alert');
+  });
+
+  it('answers a malformed request target with 400 and carries on', async () => {
+    const port = await freePort();
+    const code = waitForCallback(options(port));
+    await hit(`http://localhost:${port}/`); // make sure the server is up
+    const raw = await new Promise<string>((resolve, reject) => {
+      const socket = connect(port, 'localhost', () => socket.write('GET //[ HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'));
+      let data = '';
+      socket.on('data', (d) => (data += d));
+      socket.on('end', () => resolve(data));
+      socket.on('error', reject);
+    });
+    expect(raw).toMatch(/^HTTP\/1\.1 400/);
+    await hit(`http://localhost:${port}/callback?code=fine&state=${STATE}`);
+    expect(await code).toBe('fine');
+  });
+
+  it('settles once: two redirects at the same moment give the first code and no crash', async () => {
+    const port = await freePort();
+    const code = waitForCallback(options(port));
+    await hit(`http://localhost:${port}/`);
+    const first = hit(`http://localhost:${port}/callback?code=c1&state=${STATE}`);
+    const second = hit(`http://localhost:${port}/callback?code=c2&state=${STATE}`, 2).catch(() => null);
+    await Promise.all([first, second]);
+    expect(['c1', 'c2']).toContain(await code);
+  });
+
+  it('binds the address the redirect names, so a 127.0.0.1 redirect is reachable at 127.0.0.1', async () => {
+    const port = await freePort();
+    const code = waitForCallback({ ...options(port), host: '127.0.0.1' });
+    const page = await hit(`http://127.0.0.1:${port}/callback?code=v4&state=${STATE}`);
+    expect(page.status).toBe(200);
+    expect(await code).toBe('v4');
   });
 
   it('rejects a redirect that has the right state but no code', async () => {
@@ -1529,11 +1649,11 @@ describe('waitForCallback', () => {
     const port = await freePort();
     const err = await failure(waitForCallback(options(port, 150)));
     expect(err.message).toMatch(/No sign-in arrived/);
-    // The port is free again, so another server can take it.
+    // The port is free again on the same address the server used, so another server can take it.
     await new Promise<void>((resolve, reject) => {
       const s = createServer();
       s.once('error', reject);
-      s.listen(port, () => s.close(() => resolve()));
+      s.listen({ port, host: 'localhost' }, () => s.close(() => resolve()));
     });
   });
 
@@ -1547,6 +1667,45 @@ describe('waitForCallback', () => {
     } finally {
       blocker.close();
     }
+  });
+});
+```
+
+Create `scripts/whoop/files.test.ts`:
+
+```ts
+import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { writePrivate } from './files';
+
+describe('writePrivate', () => {
+  const withDir = (run: (dir: string) => void) => {
+    const dir = mkdtempSync(join(tmpdir(), 'sore-spot-private-'));
+    try {
+      run(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it('writes the text, replacing what was there', () => {
+    withDir((dir) => {
+      const path = join(dir, 'whoop.token.json');
+      writePrivate(path, 'first');
+      writePrivate(path, 'second');
+      expect(readFileSync(path, 'utf8')).toBe('second');
+    });
+  });
+
+  it.skipIf(process.platform === 'win32')('leaves the file readable only by its owner, even if it already existed with wider permissions', () => {
+    withDir((dir) => {
+      const path = join(dir, 'replay.json');
+      writeFileSync(path, 'old', { mode: 0o644 });
+      writePrivate(path, 'new');
+      expect(statSync(path).mode & 0o777).toBe(0o600);
+    });
   });
 });
 ```
@@ -1570,7 +1729,7 @@ const CLIENT_ID = 'test-client-id-1234';
 const PRIVATE = [SECRET, 'access-1', 'refresh-1', 'access-2', 'refresh-2', 'the-code-xyz'];
 
 /** A stand-in for WHOOP: a token endpoint that rotates refresh tokens, and paged v2 collections. */
-function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number } = {}) {
+function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number; workoutsBody?: string; refreshStatus?: number; tokenNetworkError?: boolean; emptyWorkouts?: boolean } = {}) {
   const requests: { url: string; method: string; body?: string; auth?: string }[] = [];
   let access = 'access-1';
   let refresh = 'refresh-1';
@@ -1586,6 +1745,8 @@ function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number }
     requests.push({ url: raw, method: init?.method ?? 'GET', body: init?.body, auth: init?.headers?.authorization });
     if (url.pathname === '/oauth/oauth2/token') {
       const form = new URLSearchParams(init?.body);
+      if (options.tokenNetworkError) throw new Error('ECONNRESET talking to the token endpoint');
+      if (options.refreshStatus && form.get('grant_type') === 'refresh_token') return respond(options.refreshStatus, 'token trouble');
       if (form.get('client_secret') !== SECRET || form.get('client_id') !== CLIENT_ID) return respond(401, { error: 'invalid_client' });
       if (form.get('grant_type') === 'authorization_code' && form.get('code') === 'the-code-xyz') {
         issued++;
@@ -1601,7 +1762,8 @@ function fakeWhoop(options: { workoutsStatus?: number; recoveryStatus?: number }
     }
     if (init?.headers?.authorization !== `Bearer ${access}`) return respond(401, { error: 'unauthorized' });
     if (url.pathname === '/developer/v2/activity/workout') {
-      return options.workoutsStatus ? respond(options.workoutsStatus, 'server trouble') : respond(200, pages(syntheticReplay.workouts, url));
+      if (options.emptyWorkouts) return respond(200, { records: [] });
+      return options.workoutsStatus ? respond(options.workoutsStatus, options.workoutsBody ?? 'server trouble') : respond(200, pages(syntheticReplay.workouts, url));
     }
     if (url.pathname === '/developer/v2/recovery') {
       return options.recoveryStatus ? respond(options.recoveryStatus, 'server trouble') : respond(200, pages(syntheticReplay.recovery ?? [], url));
@@ -1616,7 +1778,7 @@ const memoryTokens = (initial: string | null = null): TokenFile & { text: string
   return f;
 };
 
-async function setup(whoopOptions = {}, tokenText: string | null = null, browser: 'good' | 'wrong-state' = 'good') {
+async function setup(whoopOptions = {}, tokenText: string | null = null, browser: 'good' | 'wrong-state' = 'good', timeoutMs = 3000) {
   const port = await freePort();
   const redirectUri = `http://localhost:${port}/callback`;
   const whoop = fakeWhoop(whoopOptions);
@@ -1638,7 +1800,7 @@ async function setup(whoopOptions = {}, tokenText: string | null = null, browser
       const state = new URL(url).searchParams.get('state');
       void hit(`${redirectUri}?code=the-code-xyz&state=${browser === 'wrong-state' ? 'FORGED00' : state}`).catch(() => undefined);
     },
-    waitForCode: (state) => waitForCallback({ ...callbackTarget(redirectUri), expectedState: state, timeoutMs: 3000 }),
+    waitForCode: (state) => waitForCallback({ ...callbackTarget(redirectUri), expectedState: state, timeoutMs }),
     log: (line) => void logs.push(line),
   };
   return { deps, whoop, tokenFile, logs, written, opened };
@@ -1694,9 +1856,9 @@ describe('runExport: first sign-in', () => {
   });
 
   it('ignores a redirect with the wrong state: no code exchange, no tokens, nothing written', async () => {
-    const { deps, whoop, tokenFile, written } = await setup({}, null, 'wrong-state');
+    const { deps, whoop, tokenFile, written } = await setup({}, null, 'wrong-state', 300);
     const err = await failure(runExport(deps));
-    expect(err.message).toMatch(/different state/);
+    expect(err.message).toMatch(/No sign-in arrived/);
     expect(whoop.requests.filter((r) => r.url.includes('oauth2/token'))).toHaveLength(0);
     expect(tokenFile.text).toBeNull();
     expect(written).toHaveLength(0);
@@ -1731,6 +1893,40 @@ describe('runExport: a saved sign-in', () => {
   });
 });
 
+describe('runExport: the refresh path', () => {
+  it('saves the rotated refresh token before any data is read, so a failed read cannot lose it', async () => {
+    const { deps, whoop, tokenFile, written } = await setup({ workoutsStatus: 500 }, savedTokens({ expiresAt: NOW - 1000 }));
+    await failure(runExport(deps));
+    const saved = loadTokens(tokenFile)!;
+    expect(saved.refresh_token).toBe(whoop.current().refresh);
+    expect(saved.refresh_token).not.toBe('refresh-1');
+    expect(written).toHaveLength(0);
+  });
+
+  it('does not sign in again when refreshing fails for a reason that is not a refusal (a dropped connection)', async () => {
+    const { deps, opened } = await setup({ tokenNetworkError: true }, savedTokens({ expiresAt: NOW - 1000 }));
+    const err = await failure(runExport(deps));
+    expect(err.message).toMatch(/ECONNRESET/);
+    expect(opened).toHaveLength(0);
+  });
+
+  it('does not sign in again when refreshing hits a server error or a rate limit', async () => {
+    for (const status of [500, 429]) {
+      const { deps, opened } = await setup({ refreshStatus: status }, savedTokens({ expiresAt: NOW - 1000 }));
+      const err = await failure(runExport(deps));
+      expect(err.message, String(status)).toMatch(new RegExp(`HTTP ${status}`));
+      expect(opened, String(status)).toHaveLength(0);
+    }
+  });
+
+  it('prints and writes no secret, token or code on the refresh path either', async () => {
+    const { deps, logs, written } = await setup({}, savedTokens({ expiresAt: NOW - 1000 }));
+    await runExport(deps);
+    const everything = [...logs, ...written].join('\n');
+    for (const secret of [...PRIVATE, 'refresh-3']) expect(everything, secret).not.toContain(secret);
+  });
+});
+
 describe('runExport: failures', () => {
   it('keeps the new tokens even when reading the data fails, and writes no replay', async () => {
     const { deps, tokenFile, written } = await setup({ workoutsStatus: 500 });
@@ -1740,17 +1936,59 @@ describe('runExport: failures', () => {
     expect(written).toHaveLength(0);
   });
 
+  it('scrubs the client secret, client id and refresh token from an error body echoed by the data endpoints', async () => {
+    const echo = `oops ${SECRET} ${CLIENT_ID} refresh-1 access-1`;
+    const { deps, written } = await setup({ workoutsStatus: 500, workoutsBody: echo });
+    const err = await failure(runExport(deps));
+    expect(err.message).toMatch(/HTTP 500/);
+    for (const secret of [SECRET, CLIENT_ID, 'refresh-1', 'access-1']) expect(err.message, secret).not.toContain(secret);
+    expect(written).toHaveLength(0);
+  });
+
+  it('refuses to write an export with no workouts, and says what to try', async () => {
+    const { deps, written } = await setup({ emptyWorkouts: true });
+    const err = await failure(runExport(deps));
+    expect(err.message).toMatch(/no workouts for the last 60 days.*--days/);
+    expect(written).toHaveLength(0);
+  });
+
   it('writes nothing when recovery fails after workouts succeeded', async () => {
     const { deps, written } = await setup({ recoveryStatus: 500 });
     await failure(runExport(deps));
     expect(written).toHaveLength(0);
   });
 
-  it('tells the person to sign in again when a saved access token is rejected', async () => {
-    const stale = savedTokens({ access: 'access-not-current' });
-    const { deps, written } = await setup({}, stale);
+  it('renews a saved token that has not expired but was rejected, instead of failing on every run', async () => {
+    const { deps, whoop, tokenFile, opened, written, logs } = await setup({}, savedTokens({ access: 'access-not-current' }));
+    await runExport(deps);
+    expect(opened).toHaveLength(0);
+    expect(written).toHaveLength(1);
+    expect(logs.join('\n')).toMatch(/rejected the saved sign-in, so renewing/);
+    expect(loadTokens(tokenFile)?.refresh_token).toBe(whoop.current().refresh);
+  });
+
+  it('signs in again when the rejected saved token cannot be renewed either', async () => {
+    const { deps, opened, written } = await setup({}, savedTokens({ access: 'access-not-current', refresh: 'stale-refresh' }));
+    await runExport(deps);
+    expect(opened).toHaveLength(1);
+    expect(written).toHaveLength(1);
+  });
+
+  it('does not loop: a token rejected right after a fresh sign-in is an error, with no second sign-in', async () => {
+    const { deps, whoop, opened, written } = await setup({ workoutsStatus: 401 });
     const err = await failure(runExport(deps));
     expect(err.message).toMatch(/sign in/i);
+    expect(opened).toHaveLength(1);
+    // The only token request was the code exchange: nothing tried to renew a sign-in that had just been made.
+    expect(whoop.requests.filter((r) => r.url.includes('oauth2/token'))).toHaveLength(1);
+    expect(written).toHaveLength(0);
+  });
+
+  it('gives up after one renewal when WHOOP keeps rejecting a saved sign-in', async () => {
+    const { deps, opened, written } = await setup({ workoutsStatus: 401 }, savedTokens());
+    const err = await failure(runExport(deps));
+    expect(err.message).toMatch(/sign in/i);
+    expect(opened).toHaveLength(0);
     expect(written).toHaveLength(0);
   });
 });
@@ -1779,9 +2017,16 @@ describe('the export command', () => {
     const guard = cli.indexOf('assertGitIgnored(PRIVATE_FILES, gitCheckIgnore(root))');
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(cli.indexOf('runExport('));
-    expect(cli.indexOf('readWhoopEnv(')).toBeLessThan(guard);
+    // Before the credentials file is even read or parsed.
+    expect(guard).toBeLessThan(cli.indexOf('readFileSync(envPath'));
+    expect(guard).toBeLessThan(cli.indexOf('readWhoopEnv('));
     // The guard runs before any network call, and the only network call is inside runExport.
     expect(cli).not.toMatch(/fetch\(\s*['"`]http/);
+  });
+
+  it('never follows a redirect and never waits forever, so a request body cannot be replayed elsewhere or hang', () => {
+    expect(cli).toContain("redirect: 'error'");
+    expect(cli).toContain('signal: AbortSignal.timeout(30_000)');
   });
 
   it('scrubs the client secret from any error before printing it', () => {
@@ -1792,8 +2037,10 @@ describe('the export command', () => {
   it('writes only the two private files it is allowed to, and only under the git-ignored names', () => {
     expect(cli).toContain("join(root, 'whoop.token.json')");
     expect(cli).toContain("join(root, 'data', 'replay.json')");
-    const writes = cli.match(/writeFileSync\(([^,]+),/g) ?? [];
-    expect(writes.map((w) => w.replace(/writeFileSync\(|,/g, ''))).toEqual(['tokenPath', 'replayPath']);
+    const writes = cli.match(/writePrivate\(([^,]+),/g) ?? [];
+    expect(writes.map((w) => w.replace(/writePrivate\(|,/g, ''))).toEqual(['tokenPath', 'replayPath']);
+    // Nothing writes a private file any other way.
+    expect(cli).not.toMatch(/writeFileSync|createWriteStream|appendFileSync/);
   });
 
   it('is reachable as `npm run export-whoop`, and the runner is a dev dependency', () => {
@@ -1832,8 +2079,8 @@ describe('what the scripts never do', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `npx vitest run scripts/whoop/callback.test.ts scripts/whoop/run.test.ts scripts/whoop/cli.test.ts`
-Expected: FAIL. `callback.test.ts` cannot resolve `./callback`, `run.test.ts` cannot resolve `./run`, and `cli.test.ts` cannot read `scripts/export-whoop.ts`. Paste the real output.
+Run: `npx vitest run scripts/whoop/callback.test.ts scripts/whoop/files.test.ts scripts/whoop/run.test.ts scripts/whoop/cli.test.ts`
+Expected: FAIL. `callback.test.ts` cannot resolve `./callback`, `files.test.ts` cannot resolve `./files`, `run.test.ts` cannot resolve `./run`, and `cli.test.ts` cannot read `scripts/export-whoop.ts`. Paste the real output.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -1844,53 +2091,68 @@ import { createServer } from 'node:http';
 
 export interface CallbackOptions {
   port: number;
+  /** The address the redirect names: `localhost` or `127.0.0.1`. The server binds exactly that, and only that. */
+  host?: string;
   path: string;
-  /** The state sent with the sign-in request: the redirect must bring the same one back. */
+  /** The state sent with the sign-in request: only a redirect that brings the same one back is used. */
   expectedState: string;
   timeoutMs: number;
 }
 
+// Every page is fixed text: nothing from the request is ever put in it.
 const page = (message: string) =>
   `<!doctype html><meta charset="utf-8"><title>Sore Spot export</title><body style="font:16px system-ui;padding:2rem"><p>${message}</p>`;
 
+/** Short and plain, so nothing from a redirect can put control codes in the terminal. */
+const cleanReason = (raw: string) => raw.replace(/[^A-Za-z0-9_.-]/g, '').slice(0, 40) || 'unknown';
+
 /**
  * Listens on localhost for the one redirect WHOOP sends after sign-in and resolves with the
- * authorization code. Rejects on a denied sign-in, a state that does not match, or a timeout.
+ * authorization code. A request without the right state is answered and ignored, so a stray page
+ * cannot end or hijack a sign-in. Rejects on a denied sign-in, a missing code, or a timeout.
  */
 export function waitForCallback(opts: CallbackOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     let settled = false;
+    const settle = (finish: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      server.close();
+      finish();
+    };
     const server = createServer((req, res) => {
-      const url = new URL(req.url ?? '/', `http://localhost:${opts.port}`);
-      if (url.pathname !== opts.path) {
-        res.writeHead(404, { 'content-type': 'text/plain' }).end('Not found');
+      const reply = (status: number, body: string, type = 'text/html; charset=utf-8') => res.writeHead(status, { 'content-type': type }).end(body);
+      let url: URL;
+      try {
+        url = new URL(req.url ?? '/', `http://localhost:${opts.port}`);
+      } catch {
+        reply(400, 'Bad request', 'text/plain');
         return;
       }
-      const finish = (status: number, message: string, error?: Error, code?: string) => {
-        res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' }).end(page(message));
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        server.close();
-        if (error) reject(error);
-        else resolve(code as string);
-      };
+      if (url.pathname !== opts.path) {
+        reply(404, 'Not found', 'text/plain');
+        return;
+      }
+      if (url.searchParams.get('state') !== opts.expectedState) {
+        reply(400, page('That request did not match this export, so it was ignored. You can close this tab.'));
+        return;
+      }
       const denied = url.searchParams.get('error');
+      const code = url.searchParams.get('code');
       if (denied) {
-        finish(400, 'WHOOP did not authorize the export. You can close this tab.', new Error(`WHOOP sign-in was not completed (${denied}).`));
-      } else if (url.searchParams.get('state') !== opts.expectedState) {
-        finish(400, 'That sign-in did not match this export. You can close this tab.', new Error('The sign-in redirect had a different state than the one sent, so it was ignored. Run the export again.'));
-      } else if (!url.searchParams.get('code')) {
-        finish(400, 'No code came back. You can close this tab.', new Error('The sign-in redirect had no code.'));
+        reply(400, page('WHOOP did not authorize the export. You can close this tab.'));
+        settle(() => reject(new Error(`WHOOP sign-in was not completed (${cleanReason(denied)}).`)));
+      } else if (!code) {
+        reply(400, page('No code came back. You can close this tab.'));
+        settle(() => reject(new Error('The sign-in redirect had no code.')));
       } else {
-        finish(200, 'Signed in. You can close this tab and return to the terminal.', undefined, url.searchParams.get('code') as string);
+        reply(200, page('Signed in. You can close this tab and return to the terminal.'));
+        settle(() => resolve(code));
       }
     });
     const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      server.close();
-      reject(new Error(`No sign-in arrived within ${Math.round(opts.timeoutMs / 1000)} seconds. Run the export again.`));
+      settle(() => reject(new Error(`No sign-in arrived within ${Math.round(opts.timeoutMs / 1000)} seconds. Run the export again.`)));
     }, opts.timeoutMs);
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (settled) return;
@@ -1902,8 +2164,24 @@ export function waitForCallback(opts: CallbackOptions): Promise<string> {
           : err,
       );
     });
-    server.listen({ port: opts.port, host: 'localhost' });
+    server.listen({ port: opts.port, host: opts.host ?? 'localhost' });
   });
+}
+```
+
+Create `scripts/whoop/files.ts`:
+
+```ts
+import { chmodSync, writeFileSync } from 'node:fs';
+
+/**
+ * Writes a file only its owner can read (where the system supports it): mode 600 on creation, and
+ * again afterwards in case the file already existed with wider permissions. Used for the token file
+ * and the health data.
+ */
+export function writePrivate(path: string, text: string): void {
+  writeFileSync(path, text, { mode: 0o600 });
+  chmodSync(path, 0o600);
 }
 ```
 
@@ -1933,13 +2211,25 @@ export interface RunDeps {
   makeState?: () => string;
 }
 
-/** Fresh saved tokens, a refreshed set, or a new sign-in: whichever the situation needs. */
-async function getTokens(deps: RunDeps): Promise<Tokens> {
+interface Signed {
+  tokens: Tokens;
+  /** True when these came from the saved file, so a rejection may only mean they went stale. */
+  fromSaved: boolean;
+}
+
+/** Only these mean "the refresh token is no good": a server error or a rate limit is not a reason to sign in again. */
+const isRefusal = (err: unknown): boolean => err instanceof WhoopHttpError && (err.status === 400 || err.status === 401);
+
+/**
+ * Fresh saved tokens, a refreshed set, or a new sign-in: whichever the situation needs.
+ * `force` skips the freshness check, for a saved token that WHOOP has just rejected.
+ */
+async function getTokens(deps: RunDeps, force: boolean): Promise<Signed> {
   const endpoints = deps.endpoints ?? DEFAULT_ENDPOINTS;
   const saved = loadTokens(deps.tokenFile);
-  if (saved && isFresh(saved, deps.now())) {
+  if (!force && saved && isFresh(saved, deps.now())) {
     deps.log('Using the saved sign-in.');
-    return saved;
+    return { tokens: saved, fromSaved: true };
   }
   if (saved?.refresh_token) {
     try {
@@ -1947,9 +2237,9 @@ async function getTokens(deps: RunDeps): Promise<Tokens> {
       // WHOOP rotates the refresh token, so the new one is saved before anything else can fail.
       saveTokens(deps.tokenFile, refreshed);
       deps.log('Renewed the saved sign-in.');
-      return refreshed;
+      return { tokens: refreshed, fromSaved: true };
     } catch (err) {
-      if (!(err instanceof WhoopHttpError)) throw err;
+      if (!isRefusal(err)) throw err;
       deps.log('The saved sign-in was refused, so signing in again.');
     }
   }
@@ -1962,25 +2252,41 @@ async function getTokens(deps: RunDeps): Promise<Tokens> {
   const tokens = await exchangeCode(deps.env, code, deps.fetchFn, deps.now(), endpoints);
   saveTokens(deps.tokenFile, tokens);
   deps.log('Signed in.');
-  return tokens;
+  return { tokens, fromSaved: false };
 }
 
-/** Signs in if needed, pulls the workouts and recovery for the window, and writes the replay file. */
-export async function runExport(deps: RunDeps): Promise<ExportSummary> {
-  const tokens = await getTokens(deps);
-  const end = new Date(deps.now());
-  const start = new Date(end.getTime() - deps.days * 86_400_000);
+async function readData(deps: RunDeps, tokens: Tokens, start: Date, end: Date) {
   const ctx = {
     fetchFn: deps.fetchFn,
     accessToken: tokens.access_token,
     endpoints: deps.endpoints,
     sleep: deps.sleep,
-    secrets: [deps.env.clientSecret, tokens.refresh_token ?? ''],
+    secrets: [deps.env.clientSecret, deps.env.clientId, tokens.refresh_token ?? ''],
   };
-  deps.log(`Reading the last ${deps.days} days of workouts and recovery.`);
   const workouts = await fetchWorkouts({ start, end }, ctx);
   const recovery = await fetchRecovery({ start, end }, ctx);
-  const replay = buildReplay({ workouts, recovery, exportedAt: end });
+  return { workouts, recovery };
+}
+
+/** Signs in if needed, pulls the workouts and recovery for the window, and writes the replay file. */
+export async function runExport(deps: RunDeps): Promise<ExportSummary> {
+  const signed = await getTokens(deps, false);
+  const end = new Date(deps.now());
+  const start = new Date(end.getTime() - deps.days * 86_400_000);
+  deps.log(`Reading the last ${deps.days} days of workouts and recovery.`);
+  let data;
+  try {
+    data = await readData(deps, signed.tokens, start, end);
+  } catch (err) {
+    // A saved token that has not expired can still have been revoked: renew it once, instead of failing on every run.
+    if (!(err instanceof WhoopHttpError && err.status === 401 && signed.fromSaved)) throw err;
+    deps.log('WHOOP rejected the saved sign-in, so renewing it.');
+    data = await readData(deps, (await getTokens(deps, true)).tokens, start, end);
+  }
+  if (data.workouts.length === 0) {
+    throw new Error(`WHOOP returned no workouts for the last ${deps.days} days, so nothing was written. Try a longer span with --days, or check that the sign-in was for the right account.`);
+  }
+  const replay = buildReplay({ ...data, exportedAt: end });
   deps.writeReplay(JSON.stringify(replay, null, 2));
   const summary = summarize(replay);
   for (const line of formatSummary(summary)) deps.log(line);
@@ -1992,10 +2298,11 @@ Create `scripts/export-whoop.ts`:
 
 ```ts
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { waitForCallback } from './whoop/callback';
 import { callbackTarget, parseEnvFile, readWhoopEnv, redact } from './whoop/env';
+import { writePrivate } from './whoop/files';
 import { runExport } from './whoop/run';
 import { PRIVATE_FILES, assertGitIgnored, gitCheckIgnore } from './whoop/safety';
 
@@ -2029,8 +2336,9 @@ async function main(): Promise<void> {
 
   const envPath = join(root, '.env');
   if (!existsSync(envPath)) throw new Error('No .env file here. Create it with WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET and WHOOP_REDIRECT_URI.');
-  const env = readWhoopEnv(parseEnvFile(readFileSync(envPath, 'utf8')));
+  // Before the credentials file is even read: everything private must already be git-ignored.
   assertGitIgnored(PRIVATE_FILES, gitCheckIgnore(root));
+  const env = readWhoopEnv(parseEnvFile(readFileSync(envPath, 'utf8')));
 
   const tokenPath = join(root, 'whoop.token.json');
   const replayPath = join(root, 'data', 'replay.json');
@@ -2042,14 +2350,15 @@ async function main(): Promise<void> {
       env,
       days,
       now: () => Date.now(),
-      fetchFn: (url, init) => fetch(url, init),
+      // No redirects (a form body must never be replayed to another address) and no request waits forever.
+      fetchFn: (url, init) => fetch(url, { ...init, redirect: 'error', signal: AbortSignal.timeout(30_000) }),
       tokenFile: {
         read: () => (existsSync(tokenPath) ? readFileSync(tokenPath, 'utf8') : null),
-        write: (text) => writeFileSync(tokenPath, text),
+        write: (text) => writePrivate(tokenPath, text),
       },
       writeReplay: (text) => {
         mkdirSync(dirname(replayPath), { recursive: true });
-        writeFileSync(replayPath, text);
+        writePrivate(replayPath, text);
       },
       openBrowser,
       waitForCode: (state) => waitForCallback({ ...target, expectedState: state, timeoutMs: 5 * 60_000 }),
@@ -2071,7 +2380,7 @@ main().catch((err) => {
 - [ ] **Step 4: Run the whole suite, typecheck, and the command's guard-rail smoke test**
 
 Run: `npm test && npm run typecheck`
-Expected: 40 test files, 370 tests pass (the 345 after Task 1 plus 8 callback, 10 run and 7 command tests); typecheck prints no errors.
+Expected: 41 test files, 393 tests pass (the 351 after Task 1 plus 13 callback, 2 file-permission, 19 run and 8 command tests); typecheck prints no errors. On Windows one file-permission test (owner-only mode) is skipped, so vitest reports `392 passed | 1 skipped (393)`; that is expected.
 
 Then the smoke test. It runs the real command in temporary folders and never contacts WHOOP (each case stops before any sign-in):
 ```bash
@@ -2083,7 +2392,7 @@ T3=$(mktemp -d); (cd "$T3" && git init -q && printf '.env\n' > .gitignore && pri
 T4=$(mktemp -d); (cd "$T4" && git init -q && printf '.env\ndata/replay.json\n*.token.json\n' > .gitignore && printf 'WHOOP_CLIENT_ID=abcd1234\n' > .env); echo "== 4. missing variables"; run "$T4"
 (cd "$T4" && printf 'WHOOP_CLIENT_ID=a\nWHOOP_CLIENT_SECRET=topsecret99\nWHOOP_REDIRECT_URI=http://localhost:3999/callback\n' > .env); echo "== 5. bad --days"; run "$T4" --days 0
 ```
-Expected, in order: "No .env file here. Create it with WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET and WHOOP_REDIRECT_URI."; "Refusing to run: not git-ignored: .env, data/replay.json, whoop.token.json. ..."; "Refusing to run: not git-ignored: data/replay.json, whoop.token.json. ..."; "Missing in .env: WHOOP_CLIENT_SECRET, WHOOP_REDIRECT_URI. ..."; "--days must be a whole number from 1 to 365."; each followed by `exit=1`. The text `topsecret99` must appear in none of the output. Paste the real output. Then confirm `git status --short` shows only the six files of this task.
+Expected, in order: "No .env file here. Create it with WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET and WHOOP_REDIRECT_URI."; "Refusing to run: not git-ignored: .env, data/replay.json, whoop.token.json. ..."; "Refusing to run: not git-ignored: data/replay.json, whoop.token.json. ..."; "Missing in .env: WHOOP_CLIENT_SECRET, WHOOP_REDIRECT_URI. ..."; "--days must be a whole number from 1 to 365."; each followed by `exit=1`. The text `topsecret99` must appear in none of the output. Paste the real output. Then confirm `git status --short` shows only the eight files of this task.
 
 - [ ] **Step 5: Prove the guards can fail**
 
@@ -2103,7 +2412,7 @@ npx vitest run scripts/whoop/cli.test.ts
 cp /tmp/cli.bak scripts/export-whoop.ts
 npx vitest run scripts
 ```
-Expected: the first run FAILS (a redirect with the wrong state is not rejected); the second FAILS ("renews expired tokens ... saves the rotated one"); the third FAILS (the git-ignore guard must run first); the fourth passes. Confirm `git diff --stat` shows no change to those three files. Paste all four outputs.
+Expected: the first run FAILS (a redirect with the wrong state is not ignored); the second FAILS ("renews expired tokens ... saves the rotated one"); the third FAILS (the git-ignore guard must run first); the fourth passes. Confirm `git diff --stat` shows no change to those three files. Paste all four outputs.
 
 - [ ] **Step 6: Commit**
 
@@ -2369,14 +2678,14 @@ import { syntheticReplay } from '../data/replay.synthetic';
 import { MUSCLES, RED_FLAG_QUESTIONS, UNDER_18_QUESTION, type Muscle } from '../engine';
 import { HISTORY_INCOMPLETE_NOTE } from '../engine/planText';
 import { DEMO_AS_OF } from './config';
-import { REQUIRED_VARS } from '../scripts/whoop/env';
-import { SCOPES } from '../scripts/whoop/http';
 import { CHECKIN_LABELS, SAVE_STRETCHING_TEXT } from './copy';
 import { buildForecastState } from './forecastState';
 import { recommend } from './mobility/recommend';
 import { BUILD_PLAN, CHANGE_ANSWERS, NONE_OF_THESE, PLAN_SKIP_TAGS, TAB_LABELS } from './planCopy';
 import { DEFAULT_CHOICE, GOAL_OPTIONS, computePlan } from './planFlow';
 import { answerMedicalCondition, answerNoRedFlags, answerUnder18, initialScreening } from './screening';
+import { REQUIRED_VARS } from '../scripts/whoop/env';
+import { SCOPES } from '../scripts/whoop/http';
 
 const read = (rel: string) => readFileSync(join(__dirname, '..', rel), 'utf8').replace(/\r\n/g, '\n');
 const readme = read('README.md');
@@ -2454,8 +2763,15 @@ describe('the README section on using your own WHOOP data', () => {
     expect(readme).toMatch(/never prints a secret or a token/);
   });
 
-  it('warns to use a private network rather than a public tunnel with real data', () => {
+  it('warns to use a private network rather than a public tunnel with real data, and that a web build bundles the export', () => {
     expect(readme).toMatch(/rather than a public tunnel/);
+    expect(readme).toMatch(/bundle `data\/replay\.json`/);
+    expect(demo).toMatch(/bundles your real data/);
+  });
+
+  it('says when the sign-in opens and how to make Expo pick up new data', () => {
+    expect(readme).toMatch(/The first time it opens WHOOP sign-in/);
+    expect(readme).toMatch(/--clear/);
   });
 
   it('tells the presenter the runbook numbers are those of the synthetic week', () => {
@@ -2656,10 +2972,10 @@ Replace `app/planCopy.ts` with:
 ```ts
 export const TAB_LABELS = { body: 'Body map', plan: 'Plan', evidence: 'Evidence' } as const;
 
-/** Shown under the title on every screen. A modern look must never read as an official app. */
 /** Shown instead of the synthetic banner when the app is reading a real export, so it is always clear whose data is on screen. */
-export const REAL_BANNER = 'REAL DATA \u00B7 YOUR OWN EXPORT';
+export const REAL_BANNER = 'REAL DATA · YOUR OWN EXPORT';
 
+/** Shown under the title on every screen. A modern look must never read as an official app. */
 export const INDEPENDENT_LINE = 'Independent prototype · not affiliated with WHOOP';
 
 export const PLAN_TAG_GATE_HEADING = 'Before we plan';
@@ -2817,8 +3133,8 @@ By default the app shows the synthetic week. To see your own history instead, on
    WHOOP_CLIENT_SECRET=...
    WHOOP_REDIRECT_URI=http://localhost:3000/callback
    ```
-3. Run `npm run export-whoop`. It opens WHOOP sign-in in your browser, then reads the last 60 days of workouts and recovery (`--days N` for another span, up to 365) and writes `data/replay.json`. It asks only for the workout and recovery read permissions, plus a refresh token.
-4. Restart Expo. The header now says `REAL DATA` instead of `SYNTHETIC DATA`, and the forecast starts from the moment you exported.
+3. Run `npm run export-whoop`. The first time it opens WHOOP sign-in in your browser (after that it reuses and renews the saved sign-in), then reads the last 60 days of workouts and recovery (`--days N` for another span, up to 365) and writes `data/replay.json`. It asks only for the workout and recovery read permissions, plus a refresh token.
+4. Restart Expo (add `--clear` if the old data still shows). The header now says `REAL DATA` instead of `SYNTHETIC DATA`, and the forecast starts from the moment you exported.
 
 The script prints how many workouts it found, which sports it saw, and which of them the model has no muscle map for yet (those add no soreness). Strength sessions arrive untagged, so the app asks which muscles each one worked.
 
@@ -2828,6 +3144,7 @@ It refuses to run unless `.env`, `data/replay.json` and `whoop.token.json` are a
 
 - The app runs on `data/replay.synthetic.ts` unless a local `data/replay.json` exists. That file, `.env` and `*.token.json` are git-ignored: **never commit real health data or WHOOP credentials.**
 - Health answers stay in memory and are asked again each launch. Nothing is stored or sent anywhere.
+- Web builds (`npx expo export`) bundle `data/replay.json` into their output when it exists, so keep such a build private or delete `data/replay.json` before making one you will share.
 - Your export stays on your laptop. The app loads it from `data/replay.json`, and Expo serves it to whichever device you open the app on, so use your own network rather than a public tunnel when running with real data.
 - See `PRIVACY.md` for the prototype's privacy policy, which covers the WHOOP export.
 
@@ -2860,7 +3177,7 @@ Independent prototype, not affiliated with WHOOP. Everything on screen is synthe
 1. On the laptop, in PowerShell: `npx.cmd expo start`. Scan the QR code with the iPhone Camera; Expo Go opens the app. Laptop and phone on the same Wi-Fi, or use a phone hotspot.
 2. Open the app once and check all three tabs load. The app starts on **Body map**, day **Now**, with **Front** selected. Kill and reopen it for a clean run: check-ins, tags and health answers are not saved between launches.
 3. Have the browser version ready too: `npx expo start --web` on the laptop.
-4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording.
+4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording. Make them with the synthetic week: if `data/replay.json` exists, the web build bundles your real data.
 
 ## Fallback ladder (never depend on one path)
 
@@ -2907,7 +3224,7 @@ Everything above describes the synthetic week: the counts, days and plans in the
 - [ ] **Step 4: Run the whole suite, typecheck and the web export**
 
 Run: `npm test && npm run typecheck && npx expo export --platform web --output-dir /tmp/d-export`
-Expected: 41 test files, 377 tests pass (the 370 after Task 2 plus 2 config tests and 5 more in the honesty and docs tests); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/d-export` and confirm `git status --short` shows only the nine files of this task (1 new, 8 replaced) and no `dist/` folder.
+Expected: 42 test files, 401 tests pass (the 393 after Task 2 plus 2 config tests and 6 more in the honesty and docs tests; on Windows `400 passed | 1 skipped`); typecheck prints no errors; the export ends with `Exported: ...`. Then `rm -rf /tmp/d-export` and confirm `git status --short` shows only the nine files of this task (1 new, 8 replaced) and no `dist/` folder.
 
 - [ ] **Step 5: Prove the guards can fail**
 
