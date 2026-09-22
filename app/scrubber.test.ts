@@ -1,19 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { dayIndexFromX, dayLabel, historyDayLabel, weekdayLabel } from './scrubber';
+import { dateLabel, dayIndexFromX, weekdayLabel } from './scrubber';
 
-describe('dayLabel', () => {
-  it('says Now for day 0 and +Nd after that', () => {
-    expect(dayLabel(0)).toBe('Now');
-    expect(dayLabel(1)).toBe('+1d');
-    expect(dayLabel(7)).toBe('+7d');
+describe('dateLabel', () => {
+  const asOf = new Date('2026-09-19T20:00:00Z'); // a Saturday in UTC, Sep 19
+
+  it('says Now for day 0', () => {
+    expect(dateLabel(asOf, 0)).toBe('Now');
   });
-});
 
-describe('historyDayLabel', () => {
-  it('says Now for 0 days ago and -Nd before that, mirroring dayLabel', () => {
-    expect(historyDayLabel(0)).toBe('Now');
-    expect(historyDayLabel(1)).toBe('-1d');
-    expect(historyDayLabel(7)).toBe('-7d');
+  it('gives the UTC calendar date for a day after asOf', () => {
+    expect(dateLabel(asOf, 1)).toBe('Sep 20');
+    expect(dateLabel(asOf, 7)).toBe('Sep 26');
+  });
+
+  it('gives the UTC calendar date for a day before asOf, same grammar, negative offset', () => {
+    expect(dateLabel(asOf, -1)).toBe('Sep 18');
+    expect(dateLabel(asOf, -7)).toBe('Sep 12');
+  });
+
+  it('rolls over the month', () => {
+    expect(dateLabel(asOf, 12)).toBe('Oct 1');
   });
 });
 

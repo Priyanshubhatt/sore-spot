@@ -11,7 +11,7 @@ import MoveList from './MoveList';
 interface Props {
   muscle: Muscle;
   state: MuscleState;
-  /** e.g. "Now" or "+2d (Mon)". */
+  /** e.g. "Now" or "Sep 21 (Mon)". */
   dayText: string;
   /** Check-ins describe today, so they are only offered on Now. */
   checkInEnabled: boolean;

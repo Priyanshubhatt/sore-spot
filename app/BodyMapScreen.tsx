@@ -12,7 +12,7 @@ import TagPrompt from './components/TagPrompt';
 import { BAND_LABELS, HISTORY_HEADING, HISTORY_SUBTEXT, REST_DAY_TEXT, checkInFeedback, needsTagNote, unmappedNote } from './copy';
 import { recentHistory } from './history';
 import { recommend } from './mobility/recommend';
-import { dayLabel, weekdayLabel } from './scrubber';
+import { dateLabel, weekdayLabel } from './scrubber';
 import { colors, radius, space, type } from './theme';
 import type { SoreSpot } from './useSoreSpot';
 
@@ -33,7 +33,7 @@ export default function BodyMapScreen({ spot }: Props) {
 
   const mapWidth = Math.min(screenWidth - 48, 260);
   const dayForecast = forecast.byDay[day];
-  const dayText = `${dayLabel(day)} (${weekdayLabel(asOf, day)})`;
+  const dayText = `${dateLabel(asOf, day)} (${weekdayLabel(asOf, day)})`;
   const selectedCheckIn = selected ? checkIns[selected] : undefined;
   const history = useMemo(() => recentHistory(tagged, asOf, sensitivity), [tagged, asOf, sensitivity]);
 

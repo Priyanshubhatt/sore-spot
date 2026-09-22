@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { bandColor } from '../body/colors';
 import { bandPhrase } from '../copy';
 import type { HistoryDay } from '../history';
-import { historyDayLabel, weekdayLabel } from '../scrubber';
+import { dateLabel, weekdayLabel } from '../scrubber';
 import { colors, radius, space, type } from '../theme';
 
 interface Props {
@@ -23,10 +23,10 @@ export default function ActivityHistory({ asOf, days, restText }: Props) {
           <View
             key={d.daysAgo}
             accessible
-            accessibilityLabel={`${weekdayLabel(asOf, -d.daysAgo)}, ${historyDayLabel(d.daysAgo)}: ${activity}. ${bandPhrase(d.band)}.`}
+            accessibilityLabel={`${weekdayLabel(asOf, -d.daysAgo)}, ${dateLabel(asOf, -d.daysAgo)}: ${activity}. ${bandPhrase(d.band)}.`}
             style={styles.card}
           >
-            <Text style={styles.day}>{historyDayLabel(d.daysAgo)}</Text>
+            <Text style={styles.day}>{dateLabel(asOf, -d.daysAgo)}</Text>
             <Text style={styles.weekday}>{weekdayLabel(asOf, -d.daysAgo)}</Text>
             <View style={[styles.dot, { backgroundColor: bandColor(d.band) }]} />
             <Text style={styles.activity} numberOfLines={2}>

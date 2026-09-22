@@ -1,16 +1,14 @@
 import { FORECAST_DAYS } from '../engine/constants';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 const MS_PER_DAY = 86_400_000;
 
-/** "Now" for day 0, then "+1d" ... "+7d". */
-export function dayLabel(day: number): string {
-  return day === 0 ? 'Now' : `+${day}d`;
-}
-
-/** "Now" for 0 days ago, then "-1d" ... "-7d": the same grammar as dayLabel, looking backward instead. */
-export function historyDayLabel(daysAgo: number): string {
-  return daysAgo === 0 ? 'Now' : `-${daysAgo}d`;
+/** "Now" for day 0, else the UTC calendar date of asOf + day ("Sep 22"). day may be negative, for a day before asOf. */
+export function dateLabel(asOf: Date, day: number): string {
+  if (day === 0) return 'Now';
+  const d = new Date(asOf.getTime() + day * MS_PER_DAY);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
 }
 
 /** UTC weekday of asOf + day. UTC keeps labels deterministic across time zones. */

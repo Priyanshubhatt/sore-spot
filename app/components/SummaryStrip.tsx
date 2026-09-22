@@ -9,7 +9,7 @@ const ORDER: readonly RiskBand[] = ['high', 'moderate', 'low'];
 
 interface Props {
   day: DayForecast;
-  /** e.g. "Now" or "+2d (Mon)". */
+  /** e.g. "Now" or "Sep 21 (Mon)". */
   dayText: string;
 }
 
