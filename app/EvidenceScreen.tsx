@@ -3,7 +3,6 @@ import TimeCurveChart from './components/TimeCurveChart';
 import {
   CURVE_HEADING,
   CURVE_TEXT,
-  EVIDENCE_FOOTNOTE,
   EVIDENCE_HEADING,
   EVIDENCE_INTRO,
   LABELS_HEADING,
@@ -50,8 +49,6 @@ export default function EvidenceScreen() {
           <Text key={limit} style={styles.limitText}>{`• ${limit}`}</Text>
         ))}
       </View>
-
-      <Text style={styles.footnote}>{EVIDENCE_FOOTNOTE}</Text>
     </ScrollView>
   );
 }
@@ -73,5 +70,4 @@ const styles = StyleSheet.create({
   limits: { backgroundColor: colors.warnBg, borderColor: colors.warnBorder },
   limitsHeading: { ...type.heading, fontSize: 17, color: colors.warnText },
   limitText: { fontSize: 14, lineHeight: 20, color: colors.warnText },
-  footnote: { ...type.small },
 });

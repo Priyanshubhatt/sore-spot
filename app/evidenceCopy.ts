@@ -59,7 +59,3 @@ export const LIMITS: string[] = [
   'This is an independent prototype. It is not affiliated with, endorsed by, or sponsored by WHOOP.',
   'General wellness guidance, not medical advice. A red flag stops the plan and points to a clinician.',
 ];
-
-/** Delete this line once the primary papers have been read and the summaries confirmed. */
-export const EVIDENCE_FOOTNOTE =
-  'Summarised from published reviews. The primary papers are still being checked.';

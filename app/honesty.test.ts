@@ -104,13 +104,12 @@ describe('the evidence tab and the accessibility state stay wired', () => {
     expect(text('evidence.ts')).toMatch(/timecurve\(hours\)/);
   });
 
-  it('shows every text card, the label lines, the limits card and the footnote on the evidence screen', () => {
+  it('shows every text card, the label lines and the limits card on the evidence screen', () => {
     const screen = text('EvidenceScreen.tsx');
     expect(screen).toMatch(/TEXT_CARDS\.map\(/);
     expect(screen).toMatch(/LABEL_LINES\.map\(/);
     expect(screen).toMatch(/{LIMITS_HEADING}/);
     expect(screen).toMatch(/LIMITS\.map\(/);
-    expect(screen).toMatch(/{EVIDENCE_FOOTNOTE}/);
     expect(screen).toMatch(/<TimeCurveChart /);
   });
 

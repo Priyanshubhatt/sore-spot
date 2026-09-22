@@ -14,7 +14,6 @@ import {
   type ChartBox,
 } from './evidence';
 import {
-  EVIDENCE_FOOTNOTE,
   LABEL_LINES,
   LIMITS,
   TEXT_CARDS,
@@ -106,7 +105,9 @@ describe('evidence copy', () => {
     expect(all).toMatch(/not medical advice/);
   });
 
-  it('carries a footnote saying the primary papers are still being checked', () => {
-    expect(EVIDENCE_FOOTNOTE).toMatch(/primary papers are still being checked/);
+  it('names the two primary papers the stretching claim rests on', () => {
+    const stretching = TEXT_CARDS.find((c) => c.id === 'stretching')!;
+    expect(stretching.body).toMatch(/Herbert and colleagues, 2011/);
+    expect(stretching.body).toMatch(/Dupuy and colleagues, 2018/);
   });
 });
