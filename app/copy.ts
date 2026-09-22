@@ -116,6 +116,11 @@ export const STRETCH_HONESTY = "Stretching hasn't been shown to reduce soreness.
 export const SAFETY_LINE =
   "Sharp pain, swelling, numbness or dark urine isn't normal soreness. Stop and see a clinician.";
 
+// Recent activity strip
+export const HISTORY_HEADING = 'Recent activity';
+export const HISTORY_SUBTEXT = 'What you did, and how sore it predicted you would be.';
+export const REST_DAY_TEXT = 'Rest';
+
 // Tagging strength sessions
 export const TAG_HEADING = 'Tag your strength sessions';
 export const TAG_PROMPT = 'Which muscles did each session work?';

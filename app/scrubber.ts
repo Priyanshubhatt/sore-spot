@@ -8,6 +8,11 @@ export function dayLabel(day: number): string {
   return day === 0 ? 'Now' : `+${day}d`;
 }
 
+/** "Now" for 0 days ago, then "-1d" ... "-7d": the same grammar as dayLabel, looking backward instead. */
+export function historyDayLabel(daysAgo: number): string {
+  return daysAgo === 0 ? 'Now' : `-${daysAgo}d`;
+}
+
 /** UTC weekday of asOf + day. UTC keeps labels deterministic across time zones. */
 export function weekdayLabel(asOf: Date, day: number): string {
   return WEEKDAYS[new Date(asOf.getTime() + day * MS_PER_DAY).getUTCDay()];

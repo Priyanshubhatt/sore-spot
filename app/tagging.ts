@@ -13,7 +13,8 @@ export function applyTags(workouts: TaggedWorkout[], tags: Tags): TaggedWorkout[
   return workouts.map((w) => (tags[w.id] ? { ...w, session_tag: tags[w.id] } : w));
 }
 
-function sportLabel(sportName: string): string {
+/** "weightlifting" -> "Weightlifting", "functional-fitness" -> "Functional fitness". */
+export function sportLabel(sportName: string): string {
   const text = sportName.replace(/[-_]+/g, ' ').trim();
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
@@ -25,8 +26,13 @@ function offsetMinutes(offset: string | undefined): number {
   return (m[1] === '-' ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]));
 }
 
+/** The instant `start` reads as, shifted into the day it happened where the workout was. */
+export function workoutLocalDate(workout: Pick<TaggedWorkout, 'start'> & Partial<Pick<TaggedWorkout, 'timezone_offset'>>): Date {
+  return new Date(Date.parse(workout.start) + offsetMinutes(workout.timezone_offset) * 60_000);
+}
+
 /** "Wed Sep 16 · Weightlifting", on the day it happened where the workout was, and the same on every device. */
 export function describeWorkout(workout: Pick<TaggedWorkout, 'start' | 'sport_name'> & Partial<Pick<TaggedWorkout, 'timezone_offset'>>): string {
-  const d = new Date(Date.parse(workout.start) + offsetMinutes(workout.timezone_offset) * 60_000);
+  const d = workoutLocalDate(workout);
   return `${WEEKDAYS[d.getUTCDay()]} ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()} · ${sportLabel(workout.sport_name)}`;
 }

@@ -2,6 +2,7 @@ import { Circle, Defs, LinearGradient, Path, RadialGradient, Stop, Svg } from 'r
 import type { DayForecast, Muscle, RiskBand } from '../../engine';
 import { zoneA11yLabel } from '../copy';
 import { colors } from '../theme';
+import { dominantBand } from '../body/colors';
 import { BodySide, SILHOUETTE, VIEWBOX, ZONES, musclesInView } from '../body/zones';
 
 // Soft, dimensional look: every fill is a top-to-bottom gradient (light tint to the base tone
@@ -13,7 +14,6 @@ const SELECTED_OUTLINE = colors.selectedOutline;
 const HALO_WIDTHS = [9, 6, 3.5] as const;
 const HALO_OPACITIES = [0.05, 0.09, 0.16] as const;
 const BAND_GRADIENT: Record<RiskBand, string> = { low: 'zoneLow', moderate: 'zoneModerate', high: 'zoneHigh' };
-const BAND_PRIORITY: Record<RiskBand, number> = { low: 0, moderate: 1, high: 2 };
 
 interface Props {
   side: BodySide;
@@ -28,11 +28,7 @@ export default function BodyMap({ side, forecast, selected, onSelect, width }: P
   const muscles = musclesInView(side).sort((a, b) => Number(a === selected) - Number(b === selected));
   // The ambient glow behind the figure always shows, tinted to the worst band currently on screen —
   // green on an all-clear day, same as red or amber on a sore one.
-  const dominant = muscles.reduce<RiskBand>(
-    (worst, m) => (BAND_PRIORITY[forecast[m].band] > BAND_PRIORITY[worst] ? forecast[m].band : worst),
-    'low',
-  );
-  const glow = colors[dominant];
+  const glow = colors[dominantBand(forecast, muscles)];
 
   return (
     <Svg

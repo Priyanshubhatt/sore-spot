@@ -1,11 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { dayIndexFromX, dayLabel, weekdayLabel } from './scrubber';
+import { dayIndexFromX, dayLabel, historyDayLabel, weekdayLabel } from './scrubber';
 
 describe('dayLabel', () => {
   it('says Now for day 0 and +Nd after that', () => {
     expect(dayLabel(0)).toBe('Now');
     expect(dayLabel(1)).toBe('+1d');
     expect(dayLabel(7)).toBe('+7d');
+  });
+});
+
+describe('historyDayLabel', () => {
+  it('says Now for 0 days ago and -Nd before that, mirroring dayLabel', () => {
+    expect(historyDayLabel(0)).toBe('Now');
+    expect(historyDayLabel(1)).toBe('-1d');
+    expect(historyDayLabel(7)).toBe('-7d');
   });
 });
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { syntheticReplay } from '../data/replay.synthetic';
 import { workout } from '../data/scenarios/builders';
 import { computeForecast, defaultSensitivity } from '../engine';
-import { TAG_OPTIONS, applyTags, describeWorkout } from './tagging';
+import { TAG_OPTIONS, applyTags, describeWorkout, sportLabel, workoutLocalDate } from './tagging';
 
 const wed = workout({
   id: 'w1',
@@ -37,6 +37,21 @@ describe('describeWorkout in the time zone of the workout', () => {
   it('falls back to UTC when the offset is missing or unreadable', () => {
     expect(at('2026-09-16T23:30:00Z')).toBe('Wed Sep 16 · Weightlifting');
     expect(at('2026-09-16T23:30:00Z', 'EST')).toBe('Wed Sep 16 · Weightlifting');
+  });
+});
+
+describe('sportLabel', () => {
+  it('capitalizes and turns dashes and underscores into spaces', () => {
+    expect(sportLabel('weightlifting')).toBe('Weightlifting');
+    expect(sportLabel('functional-fitness')).toBe('Functional fitness');
+    expect(sportLabel('functional_fitness')).toBe('Functional fitness');
+  });
+});
+
+describe('workoutLocalDate', () => {
+  it('shifts the start by the workout\'s own offset, same as describeWorkout uses internally', () => {
+    const d = workoutLocalDate({ start: '2026-09-16T23:30:00Z', timezone_offset: '-04:00' });
+    expect(d.toISOString()).toBe('2026-09-16T19:30:00.000Z');
   });
 });
 

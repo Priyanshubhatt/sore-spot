@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type { Muscle } from '../engine';
 import { BAND_ORDER, bandColor } from './body/colors';
 import { hasMuscle, type BodySide } from './body/zones';
+import ActivityHistory from './components/ActivityHistory';
 import BodyMap from './components/BodyMap';
 import DayScrubber from './components/DayScrubber';
 import MuscleSheet from './components/MuscleSheet';
 import SummaryStrip from './components/SummaryStrip';
 import TagPrompt from './components/TagPrompt';
-import { BAND_LABELS, checkInFeedback, needsTagNote, unmappedNote } from './copy';
+import { BAND_LABELS, HISTORY_HEADING, HISTORY_SUBTEXT, REST_DAY_TEXT, checkInFeedback, needsTagNote, unmappedNote } from './copy';
+import { recentHistory } from './history';
 import { recommend } from './mobility/recommend';
 import { dayLabel, weekdayLabel } from './scrubber';
 import { colors, radius, space, type } from './theme';
@@ -23,7 +25,7 @@ interface Props {
 /** The body map tab. The title, banner and disclaimer live in the app shell so they show on every tab. */
 export default function BodyMapScreen({ spot }: Props) {
   const { width: screenWidth } = useWindowDimensions();
-  const { forecast, sensitivity, untagged, checkIns, asOf } = spot;
+  const { forecast, sensitivity, tagged, untagged, checkIns, asOf } = spot;
 
   const [side, setSide] = useState<BodySide>('front');
   const [day, setDay] = useState(0);
@@ -33,6 +35,7 @@ export default function BodyMapScreen({ spot }: Props) {
   const dayForecast = forecast.byDay[day];
   const dayText = `${dayLabel(day)} (${weekdayLabel(asOf, day)})`;
   const selectedCheckIn = selected ? checkIns[selected] : undefined;
+  const history = useMemo(() => recentHistory(tagged, asOf, sensitivity), [tagged, asOf, sensitivity]);
 
   const select = (muscle: Muscle) => setSelected((cur) => (cur === muscle ? null : muscle));
   // Keep the open sheet only if its muscle is drawn in the view we are switching to.
@@ -76,6 +79,12 @@ export default function BodyMapScreen({ spot }: Props) {
             onSelect={select}
             width={mapWidth}
           />
+        </View>
+
+        <View style={styles.historyBlock}>
+          <Text style={styles.historyHeading}>{HISTORY_HEADING}</Text>
+          <Text style={styles.historySubtext}>{HISTORY_SUBTEXT}</Text>
+          <ActivityHistory asOf={asOf} days={history} restText={REST_DAY_TEXT} />
         </View>
 
         <View style={styles.legend}>
@@ -141,6 +150,9 @@ const styles = StyleSheet.create({
   toggleText: { fontWeight: '700', color: colors.dim },
   toggleTextOn: { color: colors.onAccent },
   mapWrap: { alignItems: 'center' },
+  historyBlock: { gap: 6 },
+  historyHeading: { ...type.heading },
+  historySubtext: { ...type.small, marginBottom: 2 },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendSwatch: { width: 14, height: 14, borderRadius: 7 },
