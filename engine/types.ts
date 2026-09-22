@@ -85,6 +85,8 @@ export interface ReplayFile {
   workouts: TaggedWorkout[];
   /** Optional: a real export adds it, and so does the synthetic week. */
   recovery?: Recovery[];
+  /** When a real export was made (an ISO date): the app's "now". Absent for the synthetic week, which uses a fixed demo time. */
+  asOf?: string;
 }
 
 export type Sensitivity = Record<Muscle, number>;

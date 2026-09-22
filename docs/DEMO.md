@@ -7,7 +7,7 @@ Independent prototype, not affiliated with WHOOP. Everything on screen is synthe
 1. On the laptop, in PowerShell: `npx.cmd expo start`. Scan the QR code with the iPhone Camera; Expo Go opens the app. Laptop and phone on the same Wi-Fi, or use a phone hotspot.
 2. Open the app once and check all three tabs load. The app starts on **Body map**, day **Now**, with **Front** selected. Kill and reopen it for a clean run: check-ins, tags and health answers are not saved between launches.
 3. Have the browser version ready too: `npx expo start --web` on the laptop.
-4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording.
+4. Make the offline copies now: `npx expo export --platform web` writes a static web build to `dist/` (git-ignored), and record the phone screen for the fallback recording. Make them with the synthetic week: if `data/replay.json` exists, the web build bundles your real data.
 
 ## Fallback ladder (never depend on one path)
 
@@ -39,6 +39,10 @@ The forecast is fixed at **2026-09-19 20:00 UTC** (Saturday evening, after the s
 | "Recommendations are labelled by strength of evidence." | That stretching prevents or relieves soreness. |
 | "I would check this against real soreness logs." | That it is clinically proven, or anything that implies diagnosis. |
 | "This is a wellness tool, not medical advice." | Any claim about blood flow or oxygen. |
+
+## Using your own data in the demo
+
+Everything above describes the synthetic week: the counts, days and plans in the beat sheet are those of the synthetic data, and tests keep them true. With `data/replay.json` in place (see the README) the numbers will be yours and different. Rehearse the synthetic run first; if you show your own data, run through it once beforehand and redact anything personal from screenshots. Delete `data/replay.json` to return to the synthetic week.
 
 ## Before the meeting
 

@@ -53,6 +53,21 @@ export const SPORT_MUSCLE_MAP: Record<string, SportProfile> = {
     eccentricBase: 1,
     scalesWithDescent: false,
   },
+  pickleball: {
+    muscles: { calves: 0.5, quads: 0.4, adductors: 0.4, shoulders: 0.5, forearms: 0.5, core: 0.3 },
+    eccentricBase: 1.2,
+    scalesWithDescent: false,
+  },
+  volleyball: {
+    muscles: { quads: 0.7, calves: 0.7, glutes: 0.6, shoulders: 0.6, core: 0.4 },
+    eccentricBase: 1.4,
+    scalesWithDescent: false,
+  },
+  golf: {
+    muscles: { core: 0.5, forearms: 0.4, shoulders: 0.3, quads: 0.2 },
+    eccentricBase: 1,
+    scalesWithDescent: false,
+  },
 };
 
 /** Strength sport names: the API gives no muscles, so these need a session_tag. */

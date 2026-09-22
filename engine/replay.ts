@@ -79,7 +79,15 @@ export function parseReplay(raw: unknown): ReplayFile {
   }
   if (!Array.isArray(o.workouts)) throw new Error('Invalid replay file: "workouts" must be an array');
   const workouts = o.workouts.map(checkWorkout);
-  if (o.recovery === undefined) return { synthetic: o.synthetic, workouts };
+  const replay: ReplayFile = { synthetic: o.synthetic, workouts };
+  if (o.asOf !== undefined) {
+    if (typeof o.asOf !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}.*(Z|[+-]\d{2}:?\d{2})$/.test(o.asOf) || Number.isNaN(Date.parse(o.asOf))) {
+      throw new Error('Invalid replay file: "asOf" must be an ISO date string');
+    }
+    replay.asOf = o.asOf;
+  }
+  if (o.recovery === undefined) return replay;
   if (!Array.isArray(o.recovery)) throw new Error('Invalid replay file: "recovery" must be an array');
-  return { synthetic: o.synthetic, workouts, recovery: o.recovery.map(checkRecovery) };
+  replay.recovery = o.recovery.map(checkRecovery);
+  return replay;
 }

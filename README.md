@@ -46,11 +46,31 @@ app/      screens, components and their pure helpers (Body map, Plan, Evidence)
 docs/     design specs and implementation plans; DEMO.md is the 3-minute demo runbook
 ```
 
+## Using your own WHOOP data
+
+By default the app shows the synthetic week. To see your own history instead, on your own laptop:
+
+1. In the WHOOP developer dashboard, register an app whose redirect URL is `http://localhost:3000/callback`.
+2. Put its credentials in a `.env` file in the project root, one per line, with no quotes:
+   ```
+   WHOOP_CLIENT_ID=...
+   WHOOP_CLIENT_SECRET=...
+   WHOOP_REDIRECT_URI=http://localhost:3000/callback
+   ```
+3. Run `npm run export-whoop`. The first time it opens WHOOP sign-in in your browser (after that it reuses and renews the saved sign-in), then reads the last 60 days of workouts and recovery (for another span, 1 to 365 days, type `npm run export-whoop -- --days 90`: the `--` before the flag is needed, or npm keeps the flag for itself; the script refuses any argument it does not recognise) and writes `data/replay.json`. It asks only for the workout and recovery read permissions, plus a refresh token.
+4. Restart Expo (add `--clear` if the old data still shows). The header now says `REAL DATA` instead of `SYNTHETIC DATA`, and the forecast starts from the moment you exported.
+
+The script prints how many workouts it found, which sports it saw, and which of them the model has no muscle map for yet (those add no soreness). Strength sessions arrive untagged, so the app asks which muscles each one worked, but only for the last 37 days: an older session can no longer change the forecast (its own soreness is over, and it is outside the 28 days a later session is compared with). If some records are not in the shape the app expects, the script skips them, says how many and why (never including an id), and keeps the rest.
+
+It refuses to run unless `.env`, `data/replay.json` and `whoop.token.json` are all git-ignored, and it never prints a secret or a token. To go back to the synthetic week, delete `data/replay.json`.
+
 ## Data and privacy
 
 - The app runs on `data/replay.synthetic.ts` unless a local `data/replay.json` exists. That file, `.env` and `*.token.json` are git-ignored: **never commit real health data or WHOOP credentials.**
 - Health answers stay in memory and are asked again each launch. Nothing is stored or sent anywhere.
-- See `PRIVACY.md` for the prototype's privacy policy. It also covers the planned WHOOP export, which is not built yet.
+- Web builds (`npx expo export`) bundle `data/replay.json` into their output when it exists, so keep such a build private or delete `data/replay.json` before making one you will share.
+- Your export stays on your laptop. The app loads it from `data/replay.json`, and Expo serves it to whichever device you open the app on, so use your own network rather than a public tunnel when running with real data.
+- See `PRIVACY.md` for the prototype's privacy policy. It lists everything the app could ever be given permission to read; the export itself asks only for workouts, recovery and a refresh token.
 
 ## Honest limits
 
@@ -62,7 +82,7 @@ docs/     design specs and implementation plans; DEMO.md is the 3-minute demo ru
 
 ## Status
 
-Built so far: the soreness engine, the body map and scrubber, check-ins with comfort ideas and session tagging, the plan engine with guardrails, the Plan tab, and the Evidence tab. Not built yet: the one-time export of real WHOOP history (the app currently reads the synthetic week).
+Built so far: the soreness engine, the body map and scrubber, check-ins with comfort ideas and session tagging, the plan engine with guardrails, the Plan tab, and the Evidence tab. The one-time export of your own WHOOP history (`npm run export-whoop`) is built and tested against a stand-in for WHOOP; the first run against your real account is yours to do.
 
 ## License
 

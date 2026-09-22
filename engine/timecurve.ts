@@ -10,6 +10,9 @@ const POINTS: ReadonlyArray<readonly [hours: number, level: number]> = [
   [192, 0],
 ];
 
+/** Hours after a session ends at which the curve reaches zero: nothing older changes a forecast. */
+export const TIMECURVE_HORIZON_HOURS = POINTS[POINTS.length - 1][0];
+
 /** Soreness level 0..1 at `hoursElapsed` after a session ends. Piecewise linear. */
 export function timecurve(hoursElapsed: number): number {
   if (hoursElapsed <= POINTS[0][0]) return 0;

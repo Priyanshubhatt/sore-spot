@@ -1,5 +1,8 @@
 export const TAB_LABELS = { body: 'Body map', plan: 'Plan', evidence: 'Evidence' } as const;
 
+/** Shown instead of the synthetic banner when the app is reading a real export, so it is always clear whose data is on screen. */
+export const REAL_BANNER = 'REAL DATA · YOUR OWN EXPORT';
+
 /** Shown under the title on every screen. A modern look must never read as an official app. */
 export const INDEPENDENT_LINE = 'Independent prototype · not affiliated with WHOOP';
 
