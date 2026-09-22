@@ -34,4 +34,14 @@ describe('sport-to-muscle map', () => {
     expect(SPORT_MUSCLE_MAP.hiking.scalesWithDescent).toBe(true);
     expect(SPORT_MUSCLE_MAP.cycling.scalesWithDescent).toBe(false);
   });
+
+  it('maps the court and racket sports added from a real export: pickleball, volleyball, golf', () => {
+    for (const sport of ['pickleball', 'volleyball', 'golf'] as const) {
+      expect(SPORT_MUSCLE_MAP[sport]).toBeDefined();
+      expect(Object.keys(SPORT_MUSCLE_MAP[sport].muscles).length).toBeGreaterThan(0);
+      expect(SPORT_MUSCLE_MAP[sport].scalesWithDescent).toBe(false);
+    }
+    // Jumping (volleyball) carries more eccentric load than a low-intensity swing sport (golf).
+    expect(SPORT_MUSCLE_MAP.volleyball.eccentricBase).toBeGreaterThan(SPORT_MUSCLE_MAP.golf.eccentricBase);
+  });
 });
