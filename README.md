@@ -75,9 +75,9 @@ It refuses to run unless `.env`, `data/replay.json` and `whoop.token.json` are a
 ## Honest limits
 
 - The predictions have not been checked against real soreness logs, and the app makes no claim about how often it is right.
-- The weights, thresholds and time curve are set by hand, not fitted to data. The low, medium and high recovery cutoffs are hand-set and have not been checked against WHOOP's own zones.
+- The weights, thresholds and time curve are set by hand, not fitted to data. The low, medium and high recovery cutoffs match WHOOP's own published zones (red 0-33%, yellow 34-66%, green 67-100%), checked against `developer.whoop.com/docs/whoop-101`.
 - The exercise and comfort libraries are general guidance and still need review by a trainer or physical therapist.
-- The evidence summaries come from published reviews; the primary papers are still being checked.
+- The evidence summaries come from published reviews; the two primary papers behind the stretching claim have been checked against the app's wording.
 - Stretching has not been shown to reduce soreness. The app labels stretches as range-of-motion work and puts the training plan first.
 
 ## Status

@@ -52,7 +52,13 @@ describe('README', () => {
     expect(readme).toMatch(/SYNTHETIC DATA/);
     expect(readme).toMatch(/have not been checked against real soreness logs/);
     expect(readme).toMatch(/still need review by a trainer or physical therapist/);
-    expect(readme).toMatch(/primary papers are still being checked/);
+    expect(readme).toMatch(/primary papers.*have been checked/);
+  });
+
+  it('says the recovery cutoffs match WHOOP\'s own published zones, and no longer calls them unverified', () => {
+    expect(readme).toMatch(/match WHOOP's own published zones/);
+    expect(readme).toMatch(/red 0-33%, yellow 34-66%, green 67-100%/);
+    expect(readme).not.toMatch(/have not been checked against WHOOP's own zones/);
   });
 
   it('keeps real data and credentials out of the repository, and the .gitignore really does', () => {

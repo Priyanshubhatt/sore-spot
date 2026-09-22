@@ -54,7 +54,6 @@ export const LIMITS: string[] = [
   'The predictions have not been checked against real soreness logs. This app makes no claim about how often it is right.',
   'The numbers behind the model (weights, thresholds and the curve above) are set by hand, not fitted to data.',
   'Anything marked SYNTHETIC DATA is made up for the demo.',
-  'The low, medium and high recovery cutoffs are set by hand and have not been checked against WHOOP\'s own zones.',
   'The exercise and comfort libraries are general guidance and still need review by a trainer or physical therapist.',
   'This is an independent prototype. It is not affiliated with, endorsed by, or sponsored by WHOOP.',
   'General wellness guidance, not medical advice. A red flag stops the plan and points to a clinician.',

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { timecurve } from '../engine';
 import { NOVELTY_CAP, NOVELTY_WINDOW_DAYS } from '../engine/constants';
+import { RECOVERY_LOW_MAX, RECOVERY_MEDIUM_MAX } from '../engine/recovery';
 import {
   CURVE_END_HOURS,
   CURVE_STEP_HOURS,
@@ -99,10 +100,17 @@ describe('evidence copy', () => {
     expect(all).toMatch(/not been checked against real soreness logs/);
     expect(all).toMatch(/set by hand/);
     expect(all).toMatch(/SYNTHETIC DATA/);
-    expect(all).toMatch(/recovery cutoffs/);
     expect(all).toMatch(/trainer or physical therapist/);
     expect(all).toMatch(/not affiliated with, endorsed by, or sponsored by WHOOP/);
     expect(all).toMatch(/not medical advice/);
+    // The recovery cutoffs are no longer a listed limit: they match WHOOP's own published zones exactly
+    // (developer.whoop.com/docs/whoop-101, checked 2026-09-22), so this is not a gap to own up to any more.
+    expect(all).not.toMatch(/recovery cutoffs/);
+  });
+
+  it('matches WHOOP\'s own published recovery zones exactly', () => {
+    expect(RECOVERY_LOW_MAX).toBe(33);
+    expect(RECOVERY_MEDIUM_MAX).toBe(66);
   });
 
   it('names the two primary papers the stretching claim rests on', () => {

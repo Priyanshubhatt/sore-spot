@@ -2,8 +2,8 @@ import type { Recovery } from './types';
 
 export type RecoveryLevel = 'low' | 'medium' | 'high';
 
-// Hand-set constants. They follow WHOOP's public recovery colors, but the API documentation does not
-// define recovery zones, so they are unverified and uncalibrated. This is the one place to change them.
+// Match WHOOP's own published recovery zones exactly: red 0-33%, yellow 34-66%, green 67-100%
+// (developer.whoop.com/docs/whoop-101, checked 2026-09-22). This is the one place to change them.
 export const RECOVERY_LOW_MAX = 33;
 export const RECOVERY_MEDIUM_MAX = 66;
 
