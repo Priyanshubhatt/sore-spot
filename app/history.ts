@@ -1,6 +1,12 @@
 import { computeForecast, type RiskBand, type Sensitivity, type TaggedWorkout } from '../engine';
 import { dominantBand } from './body/colors';
+import { TAG_LABELS } from './copy';
 import { sportLabel, workoutLocalDate } from './tagging';
+
+/** "Lower body" for a tagged strength session, else the plain sport name: whichever says more about what was done. */
+function activityLabel(w: TaggedWorkout): string {
+  return w.session_tag ? TAG_LABELS[w.session_tag] : sportLabel(w.sport_name);
+}
 
 const MS_PER_DAY = 86_400_000;
 
@@ -31,7 +37,7 @@ export function recentHistory(
     const activities: string[] = [];
     for (const w of workouts) {
       if (workoutLocalDate(w).toISOString().slice(0, 10) !== dayKey) continue;
-      const label = sportLabel(w.sport_name);
+      const label = activityLabel(w);
       if (!activities.includes(label)) activities.push(label);
     }
     const band = dominantBand(computeForecast(workouts, at, sensitivity).byDay[0]);

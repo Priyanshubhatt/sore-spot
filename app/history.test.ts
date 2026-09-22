@@ -45,9 +45,20 @@ describe('recentHistory', () => {
   it('deduplicates the same sport twice in one day, keeps two different sports', () => {
     const a = workout({ id: 'a', sport: 'running', start: '2026-09-17T07:00:00Z', zoneMinutes: [0, 5, 20, 5, 0, 0] });
     const b = workout({ id: 'b', sport: 'running', start: '2026-09-17T18:00:00Z', zoneMinutes: [0, 5, 20, 5, 0, 0] });
-    const c = workout({ id: 'c', sport: 'weightlifting', tag: 'lower', start: '2026-09-17T12:00:00Z', zoneMinutes: [0, 10, 30, 15, 5, 0] });
+    const c = workout({ id: 'c', sport: 'weightlifting', start: '2026-09-17T12:00:00Z', zoneMinutes: [0, 10, 30, 15, 5, 0] });
     const days = recentHistory([a, b, c], asOf, S);
     expect(days.find((d) => d.daysAgo === 2)!.activities).toEqual(['Running', 'Weightlifting']);
+  });
+
+  it('shows a tagged strength session by its tag, not the generic sport name', () => {
+    const legs = workout({ id: 'legs', sport: 'weightlifting', tag: 'lower', start: '2026-09-17T12:00:00Z', zoneMinutes: [0, 10, 30, 15, 5, 0] });
+    const push = workout({ id: 'push', sport: 'weightlifting', tag: 'push', start: '2026-09-15T12:00:00Z', zoneMinutes: [0, 10, 30, 15, 5, 0] });
+    const untagged = workout({ id: 'untagged', sport: 'weightlifting', start: '2026-09-14T12:00:00Z', zoneMinutes: [0, 10, 30, 15, 5, 0] });
+    const days = recentHistory([legs, push, untagged], asOf, S);
+    expect(days.find((d) => d.daysAgo === 2)!.activities).toEqual(['Lower body']);
+    expect(days.find((d) => d.daysAgo === 4)!.activities).toEqual(['Push']);
+    // No tag yet: falls back to the plain sport name rather than guessing.
+    expect(days.find((d) => d.daysAgo === 5)!.activities).toEqual(['Weightlifting']);
   });
 
   it('matches the same band the live forecast would give for that day', () => {
