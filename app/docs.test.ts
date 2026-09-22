@@ -5,7 +5,7 @@ import { syntheticReplay } from '../data/replay.synthetic';
 import { MUSCLES, RED_FLAG_QUESTIONS, UNDER_18_QUESTION, type Muscle } from '../engine';
 import { HISTORY_INCOMPLETE_NOTE } from '../engine/planText';
 import { DEMO_AS_OF } from './config';
-import { CHECKIN_LABELS, SAVE_STRETCHING_TEXT } from './copy';
+import { CHECKIN_LABELS, HISTORY_HEADING, SAVE_STRETCHING_TEXT } from './copy';
 import { buildForecastState } from './forecastState';
 import { recommend } from './mobility/recommend';
 import { BUILD_PLAN, CHANGE_ANSWERS, NONE_OF_THESE, PLAN_SKIP_TAGS, TAB_LABELS } from './planCopy';
@@ -152,6 +152,7 @@ describe('demo runbook: structure', () => {
     expect(demo).toContain(`**${UNDER_18_QUESTION}**`);
     expect(demo).toContain(`**${GOAL_OPTIONS.find((o) => o.value === 'lose-weight')!.label}**`);
     expect(demo).toContain('**6**');
+    expect(demo).toContain(`**${HISTORY_HEADING}**`);
   });
 });
 
