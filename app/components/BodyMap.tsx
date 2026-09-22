@@ -26,12 +26,13 @@ interface Props {
 export default function BodyMap({ side, forecast, selected, onSelect, width }: Props) {
   // Draw the selected zone last so its outline sits on top of its neighbours.
   const muscles = musclesInView(side).sort((a, b) => Number(a === selected) - Number(b === selected));
-  // The ambient glow behind the figure follows the worst band currently on screen; an all-low day gets none.
+  // The ambient glow behind the figure always shows, tinted to the worst band currently on screen —
+  // green on an all-clear day, same as red or amber on a sore one.
   const dominant = muscles.reduce<RiskBand>(
     (worst, m) => (BAND_PRIORITY[forecast[m].band] > BAND_PRIORITY[worst] ? forecast[m].band : worst),
     'low',
   );
-  const glow = dominant === 'high' ? colors.high : dominant === 'moderate' ? colors.moderate : null;
+  const glow = colors[dominant];
 
   return (
     <Svg
@@ -56,15 +57,13 @@ export default function BodyMap({ side, forecast, selected, onSelect, width }: P
           <Stop offset="0" stopColor={colors.highTint} />
           <Stop offset="1" stopColor={colors.high} />
         </LinearGradient>
-        {glow && (
-          <RadialGradient id="ambientGlow" cx="50%" cy="55%" r="65%">
-            <Stop offset="0" stopColor={glow} stopOpacity={0.28} />
-            <Stop offset="1" stopColor={glow} stopOpacity={0} />
-          </RadialGradient>
-        )}
+        <RadialGradient id="ambientGlow" cx="50%" cy="55%" r="65%">
+          <Stop offset="0" stopColor={glow} stopOpacity={0.28} />
+          <Stop offset="1" stopColor={glow} stopOpacity={0} />
+        </RadialGradient>
       </Defs>
 
-      {glow && <Circle cx={100} cy={230} r={150} fill="url(#ambientGlow)" />}
+      <Circle cx={100} cy={230} r={150} fill="url(#ambientGlow)" />
 
       {SILHOUETTE.map((s, i) =>
         s.kind === 'fill' ? (
