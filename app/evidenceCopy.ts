@@ -36,7 +36,7 @@ export const TEXT_CARDS: TextCard[] = [
   {
     id: 'stretching',
     heading: 'Stretching is not a soreness fix',
-    body: `A review of stretching before and after exercise (Herbert and colleagues, 2011) and a wider review of recovery methods (Dupuy and colleagues, 2018) found no meaningful effect of stretching on soreness. ${STRETCH_HONESTY} So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
+    body: `A review of stretching before and after exercise (Herbert and colleagues, 2011) and a wider review of recovery methods (Dupuy and colleagues, 2018) found no meaningful effect of stretching on soreness. ${STRETCH_HONESTY} That does not make it pointless: many people still use it to wind down after a hard effort, and to keep their range of motion over time. So stretches here are labelled as range-of-motion work, and foam rolling and light movement are offered as comfort ideas, with mixed evidence.`,
   },
   {
     id: 'easing-in',
