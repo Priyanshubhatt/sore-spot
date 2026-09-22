@@ -27,6 +27,14 @@ export const colors = {
   high: '#FF5B4D',
 
   bodyFill: '#262B31',
+  // Lighter gradient stops for the body map's soft, dimensional look. Each pairs with its base tone
+  // above (bodyFill, low, moderate, high) as the light end of a top-to-bottom gradient; the base
+  // tones stay the ones app/theme.test.ts checks for contrast, so this file is still the one place to
+  // change a soreness color.
+  bodyFillTint: '#2E343B',
+  lowTint: '#33A186',
+  moderateTint: '#F6C34D',
+  highTint: '#FF8A75',
   selectedOutline: '#FFFFFF',
   shadow: '#000000',
 
