@@ -20,27 +20,31 @@ const legs = (id: string, date: string): TaggedWorkout =>
 
 // Four weeks of routine: easy runs Tue and Thu, leg day Tue. Gives novelty a baseline.
 const history: TaggedWorkout[] = [
-  easy('h-run-01', '2026-08-18'), legs('h-legs-01', '2026-08-18'), easy('h-run-02', '2026-08-20'),
-  easy('h-run-03', '2026-08-25'), legs('h-legs-02', '2026-08-25'), easy('h-run-04', '2026-08-27'),
-  easy('h-run-05', '2026-09-01'), legs('h-legs-03', '2026-09-01'), easy('h-run-06', '2026-09-03'),
-  easy('h-run-07', '2026-09-08'), legs('h-legs-04', '2026-09-08'), easy('h-run-08', '2026-09-10'),
+  easy('h-run-01', '2026-08-22'), legs('h-legs-01', '2026-08-22'), easy('h-run-02', '2026-08-24'),
+  easy('h-run-03', '2026-08-29'), legs('h-legs-02', '2026-08-29'), easy('h-run-04', '2026-08-31'),
+  easy('h-run-05', '2026-09-05'), legs('h-legs-03', '2026-09-05'), easy('h-run-06', '2026-09-07'),
+  easy('h-run-07', '2026-09-12'), legs('h-legs-04', '2026-09-12'), easy('h-run-08', '2026-09-14'),
 ];
 
-// Demo week, Mon Sep 14 to Sun Sep 20. Sun is a rest day. The Wed strength session has no tag on purpose:
-// the engine will not guess which muscles it worked, so the app asks.
+// Demo week, Fri Sep 18 to Wed Sep 23 2026. Wed (the forecast's "Now") is a rest day: the soccer match
+// that drives its High soreness is the evening before, on Tuesday, alongside that morning's hilly run.
+// The untagged strength session (Sun Sep 20) has no tag on purpose: the engine will not guess which
+// muscles it worked, so the app asks.
+// Ids keep their original Mon-Sat names (d-mon-run etc.) as internal identifiers only; nothing
+// user-facing reads them — every displayed label comes from each workout's own `start` field.
 const demoWeek: TaggedWorkout[] = [
-  easy('d-mon-run', '2026-09-14'),
-  legs('d-tue-legs', '2026-09-15'),
-  workout({ id: 'd-wed-strength', sport: 'weightlifting', start: '2026-09-16T17:00:00Z', zoneMinutes: lowerDay }),
-  easy('d-thu-run', '2026-09-17'),
+  easy('d-mon-run', '2026-09-18'),
+  legs('d-tue-legs', '2026-09-19'),
+  workout({ id: 'd-wed-strength', sport: 'weightlifting', start: '2026-09-20T17:00:00Z', zoneMinutes: lowerDay }),
+  easy('d-thu-run', '2026-09-21'),
   workout({
-    id: 'd-fri-hilly-run', sport: 'running', start: '2026-09-18T07:00:00Z', zoneMinutes: hillyRun,
+    id: 'd-fri-hilly-run', sport: 'running', start: '2026-09-22T07:00:00Z', zoneMinutes: hillyRun,
     distanceKm: 14, altitudeGainM: 700, altitudeChangeM: 0,
   }),
-  workout({ id: 'd-sat-soccer', sport: 'soccer', start: '2026-09-19T18:00:00Z', zoneMinutes: match }),
+  workout({ id: 'd-sat-soccer', sport: 'soccer', start: '2026-09-22T18:00:00Z', zoneMinutes: match }),
 ];
 
-// One synthetic recovery per morning, Mon Sep 14 to Sat Sep 19. Not from a real WHOOP account.
+// One synthetic recovery per morning, Fri Sep 18 to Wed Sep 23. Not from a real WHOOP account.
 const morning = (date: string, cycleId: number, score: number): Recovery => ({
   cycle_id: cycleId,
   sleep_id: `synthetic-sleep-${cycleId}`,
@@ -57,12 +61,12 @@ const morning = (date: string, cycleId: number, score: number): Recovery => ({
 });
 
 const demoRecovery: Recovery[] = [
-  morning('2026-09-14', 900001, 82),
-  morning('2026-09-15', 900002, 71),
-  morning('2026-09-16', 900003, 58),
-  morning('2026-09-17', 900004, 66),
-  morning('2026-09-18', 900005, 31),
-  morning('2026-09-19', 900006, 47),
+  morning('2026-09-18', 900001, 82),
+  morning('2026-09-19', 900002, 71),
+  morning('2026-09-20', 900003, 58),
+  morning('2026-09-21', 900004, 66),
+  morning('2026-09-22', 900005, 31),
+  morning('2026-09-23', 900006, 47),
 ];
 
 export const syntheticReplay: ReplayFile = {

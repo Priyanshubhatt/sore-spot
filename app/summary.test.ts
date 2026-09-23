@@ -17,15 +17,15 @@ describe('summarize', () => {
     expect(new Set([...s.high, ...s.moderate, ...s.low]).size).toBe(MUSCLES.length);
   });
 
-  it('counts the demo week: four High now, an extra Moderate tomorrow, all quiet by +6d', () => {
+  it('counts the demo week: four High now, easing to one High by +4d, all quiet by +6d', () => {
     const state = buildForecastState(syntheticReplay.workouts, {}, {}, DEMO_AS_OF);
     const counts = (d: number) => {
       const s = summarize(state.forecast.byDay[d]);
       return [s.high.length, s.moderate.length, s.low.length];
     };
-    expect(counts(0)).toEqual([4, 0, 8]);
+    expect(counts(0)).toEqual([4, 1, 7]);
     expect(counts(1)).toEqual([4, 1, 7]);
-    expect(counts(4)).toEqual([1, 4, 7]);
+    expect(counts(4)).toEqual([1, 3, 8]);
     expect(counts(6)).toEqual([0, 0, 12]);
   });
 

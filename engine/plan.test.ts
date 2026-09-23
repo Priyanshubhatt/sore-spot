@@ -25,7 +25,7 @@ import {
   type TaggedWorkout,
 } from './types';
 
-const ASOF = new Date('2026-09-19T20:00:00Z');
+const ASOF = new Date('2026-09-23T20:00:00Z');
 const MS_PER_DAY = 86_400_000;
 const RANK: Record<RiskBand, number> = { low: 0, moderate: 1, high: 2 };
 
@@ -139,17 +139,20 @@ describe('the demo week (4 days, gym, muscle)', () => {
     expect(monday.why[0]).toMatch(/^Easy day: .*quads.*predicted sore/);
   });
 
-  it('adapts Thursday: keeps the squat, swaps the Romanian deadlift and the lunge for gentler moves', () => {
+  it('adapts Thursday: keeps the squat and the Romanian deadlift at fewer sets, swaps the lunge for a gentler move', () => {
     const thursday = plan.days[4];
     const ids = thursday.exercises.map((e) => e.id);
     expect(ids).toContain('back-squat');
-    expect(ids).toContain('hip-thrust-bb');
+    expect(ids).toContain('rdl-bb');
     expect(ids).toContain('reverse-lunge');
-    expect(ids).not.toContain('rdl-bb');
+    expect(ids).not.toContain('hip-thrust-bb');
     expect(ids).not.toContain('walking-lunge-db');
-    const thrust = thursday.exercises.find((e) => e.id === 'hip-thrust-bb')!;
-    expect(thrust.note).toMatch(/Chosen to go easy on/);
-    expect(thrust.sets).toBe(2);
+    const squat = thursday.exercises.find((e) => e.id === 'back-squat')!;
+    expect(squat.note).toMatch(/Fewer sets: quads predicted sore/);
+    expect(squat.sets).toBe(2);
+    const lunge = thursday.exercises.find((e) => e.id === 'reverse-lunge')!;
+    expect(lunge.note).toMatch(/Chosen to go easy on/);
+    expect(lunge.sets).toBe(2);
   });
 
   it('starts upper-body work light when the muscles are new to the member', () => {

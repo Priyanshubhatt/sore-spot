@@ -89,9 +89,9 @@ describe('computePlan', () => {
 
 describe('plan formatting', () => {
   it('labels plan days from the day after asOf', () => {
-    expect(planDayHeading(DEMO_AS_OF, 1)).toBe('Sun · tomorrow');
-    expect(planDayHeading(DEMO_AS_OF, 2)).toBe('Mon · in 2 days');
-    expect(planDayHeading(DEMO_AS_OF, 7)).toBe('Sat · in 7 days');
+    expect(planDayHeading(DEMO_AS_OF, 1)).toBe('Thu · tomorrow');
+    expect(planDayHeading(DEMO_AS_OF, 2)).toBe('Fri · in 2 days');
+    expect(planDayHeading(DEMO_AS_OF, 7)).toBe('Wed · in 7 days');
   });
 
   it('words sets for reps and for timed holds', () => {
