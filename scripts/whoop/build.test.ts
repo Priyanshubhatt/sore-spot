@@ -56,8 +56,8 @@ describe('summarize and formatSummary', () => {
     const s = summarize(replay);
     expect(s.workouts).toBe(workouts.length + 1);
     expect(s.recovery).toBe(recovery.length);
-    expect(s.from).toBe('2026-08-18');
-    expect(s.to).toBe('2026-09-19');
+    expect(s.from).toBe('2026-08-22');
+    expect(s.to).toBe('2026-09-22');
   });
 
   it('counts sports, most frequent first, and says which the model has no muscle map for', () => {
@@ -101,7 +101,7 @@ describe('summarize and formatSummary', () => {
 
   it('prints plain lines with counts only, and lists what is not mapped', () => {
     const lines = formatSummary(summarize(replay));
-    expect(lines[0]).toMatch(/^Workouts: \d+ \(2026-08-18 to 2026-09-19\)$/);
+    expect(lines[0]).toMatch(/^Workouts: \d+ \(2026-08-22 to 2026-09-22\)$/);
     expect(lines.join('\n')).toMatch(/Not mapped to muscles yet, so they add no soreness: kayaking \(1\)/);
     expect(lines.join('\n')).toMatch(/Strength sessions to tag in the app: \d+/);
     expect(lines.join('\n')).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}/); // no ids

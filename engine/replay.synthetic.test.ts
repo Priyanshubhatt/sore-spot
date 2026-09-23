@@ -18,16 +18,16 @@ describe('synthetic replay', () => {
     expect(syntheticReplay.workouts.find((w) => w.id === 'd-tue-legs')?.session_tag).toBe('lower');
   });
 
-  it('has one untagged strength session on Wed Sep 16, which the engine reports instead of guessing', () => {
+  it('has one untagged strength session on Sun Sep 20, which the engine reports instead of guessing', () => {
     const wed = syntheticReplay.workouts.find((w) => w.id === 'd-wed-strength');
     expect(wed?.sport_name).toBe('weightlifting');
     expect(wed?.session_tag).toBeUndefined();
-    const forecast = computeForecast(syntheticReplay.workouts, new Date('2026-09-19T20:00:00Z'), defaultSensitivity());
+    const forecast = computeForecast(syntheticReplay.workouts, new Date('2026-09-23T20:00:00Z'), defaultSensitivity());
     expect(forecast.needsTag).toEqual(['d-wed-strength']);
   });
 
-  it('has no workout on the one rest day, Sun Sep 20', () => {
+  it('has no workout on the one rest day, Wed Sep 23 (DEMO_AS_OF itself)', () => {
     const days = syntheticReplay.workouts.map((w) => w.start.slice(0, 10));
-    expect(days).not.toContain('2026-09-20');
+    expect(days).not.toContain('2026-09-23');
   });
 });

@@ -90,10 +90,10 @@ describe('shouldDeload', () => {
 });
 
 describe('synthetic demo recovery', () => {
-  it('has one scored recovery per morning, Mon Sep 14 to Sat Sep 19, ending medium', () => {
+  it('has one scored recovery per morning, Fri Sep 18 to Wed Sep 23, ending medium', () => {
     const recovery = syntheticReplay.recovery ?? [];
     expect(recovery).toHaveLength(6);
-    const levels = recentRecoveryLevels(recovery, new Date('2026-09-19T20:00:00Z'));
+    const levels = recentRecoveryLevels(recovery, new Date('2026-09-23T20:00:00Z'));
     expect(levels).toEqual(['high', 'high', 'medium', 'medium', 'low', 'medium']);
     expect(shouldDeload(levels)).toBe(false);
   });

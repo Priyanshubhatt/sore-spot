@@ -10,12 +10,12 @@ describe('buildForecastState', () => {
   it('lists the untagged demo session with a label the member can recognize', () => {
     const state = build();
     expect(state.forecast.needsTag).toEqual(['d-wed-strength']);
-    expect(state.untagged).toEqual([{ id: 'd-wed-strength', label: 'Wed Sep 16 · Weightlifting' }]);
+    expect(state.untagged).toEqual([{ id: 'd-wed-strength', label: 'Sun Sep 20 · Weightlifting' }]);
   });
 
   it('stops asking about a session once it is tagged, and the tag changes the forecast', () => {
     const before = build();
-    const after = build({ 'd-wed-strength': 'lower' });
+    const after = build({ 'd-wed-strength': 'upper' });
     expect(after.untagged).toEqual([]);
     expect(after.forecast.needsTag).toEqual([]);
     expect(JSON.stringify(after.forecast.byDay)).not.toBe(JSON.stringify(before.forecast.byDay));

@@ -25,7 +25,7 @@ import {
 import { defaultSensitivity } from './sensitivity';
 import { computeForecast } from './soreness';
 
-const ASOF = new Date('2026-09-19T20:00:00Z');
+const ASOF = new Date('2026-09-23T20:00:00Z');
 
 const input = (overrides: Partial<PlanInput> = {}): PlanInput => ({
   forecast: computeForecast(syntheticReplay.workouts, ASOF, defaultSensitivity()),

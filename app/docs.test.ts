@@ -159,20 +159,20 @@ describe('demo runbook: structure', () => {
 describe('demo runbook: facts match the engine and the app', () => {
   it('quotes the forecast time the way the app shows it', () => {
     const shown = `${DEMO_AS_OF.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
-    expect(shown).toBe('2026-09-19 20:00 UTC');
+    expect(shown).toBe('2026-09-23 20:00 UTC');
     expect(demo).toContain(shown);
   });
 
   it('gets the scrubber right: High through day 3, easing from day 4, gone by day 6, dated the way the app shows it', () => {
     for (const d of [0, 1, 2, 3]) expect(inBand(d, 'high'), `day ${d}`).toEqual(FOUR);
     expect(inBand(4, 'high')).toEqual(['quads']);
-    expect(inBand(4, 'moderate')).toEqual(['adductors', 'calves', 'glutes', 'hamstrings']);
+    expect(inBand(4, 'moderate')).toEqual(['calves', 'glutes', 'hamstrings']);
     expect(inBand(5, 'high')).toEqual([]);
-    expect(inBand(5, 'moderate')).toEqual(FOUR);
+    expect(inBand(5, 'moderate')).toEqual(['quads']);
     for (const d of [6, 7]) expect([...inBand(d, 'high'), ...inBand(d, 'moderate')], `day ${d}`).toEqual([]);
     expect(demo).toMatch(/glutes, quads, hamstrings and calves are \*\*High\*\*/);
     const [d3, d4, d5, d6] = [3, 4, 5, 6].map((d) => dateLabel(DEMO_AS_OF, d));
-    expect(d3).toBe('Sep 22');
+    expect(d3).toBe('Sep 26');
     expect(demo).toContain(
       `High through **${d3}**, ease to Moderate from **${d4}** (the quads a day later, at **${d5}**), and are gone by **${d6}**`,
     );
@@ -212,13 +212,13 @@ describe('demo runbook: facts match the engine and the app', () => {
     expect(upper.days[0].exercises[0].sets).toBe(untagged.days[0].exercises[0].sets);
 
     const thursday = upper.days[4].exercises.map((e) => e.name);
-    expect(thursday).toEqual(expect.arrayContaining(['Barbell back squat', 'Barbell hip thrust', 'Reverse lunge']));
+    expect(thursday).toEqual(expect.arrayContaining(['Barbell back squat', 'Barbell Romanian deadlift', 'Reverse lunge']));
 
     expect(demo).toContain('a note that some workouts are not counted');
     // The runbook quotes the app's own notes, minus the full stop.
     expect(demo).toContain(`*${newForYou.replace(/\.$/, '')}*`);
     expect(demo).toContain(`*${fewerSets.replace(/\.$/, '')}*`);
-    expect(demo).toMatch(/back squat at fewer sets, a hip thrust and a reverse lunge/);
+    expect(demo).toMatch(/back squat and Romanian deadlift at fewer sets, and a reverse lunge/);
     expect(demo).toContain('the not-counted note is gone');
     // Tags cannot be changed once given, so the runbook must not tell the presenter to re-tag.
     expect(demo).not.toMatch(/tag the session \*\*Lower body\*\* instead/i);
