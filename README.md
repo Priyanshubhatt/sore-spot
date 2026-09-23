@@ -72,14 +72,6 @@ It refuses to run unless `.env`, `data/replay.json` and `whoop.token.json` are a
 - Your export stays on your laptop. The app loads it from `data/replay.json`, and Expo serves it to whichever device you open the app on, so use your own network rather than a public tunnel when running with real data.
 - See `PRIVACY.md` for the prototype's privacy policy. It lists everything the app could ever be given permission to read; the export itself asks only for workouts, recovery and a refresh token.
 
-## Honest limits
-
-- The predictions have not been checked against real soreness logs, and the app makes no claim about how often it is right.
-- The weights, thresholds and time curve are set by hand, not fitted to data. The low, medium and high recovery cutoffs match WHOOP's own published zones (red 0-33%, yellow 34-66%, green 67-100%), checked against `developer.whoop.com/docs/whoop-101`.
-- The exercise and comfort libraries are general guidance and still need review by a trainer or physical therapist.
-- The evidence summaries come from published reviews; the two primary papers behind the stretching claim have been checked against the app's wording.
-- Stretching has not been shown to reduce soreness. The app labels stretches as range-of-motion work and puts the training plan first.
-
 ## Status
 
 Built so far: the soreness engine, the body map and scrubber, check-ins with comfort ideas and session tagging, the plan engine with guardrails, the Plan tab, and the Evidence tab. The one-time export of your own WHOOP history (`npm run export-whoop`) is built and tested against a stand-in for WHOOP; the first run against your real account is yours to do.
