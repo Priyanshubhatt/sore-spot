@@ -14,6 +14,22 @@ It predicts which muscles are likely to be sore after your workouts, shows that 
 | **Plan** | If a strength session is untagged it asks which muscles it worked first, then health questions (every answer starts empty), then a goal, days per week and equipment. Builds a 7-day plan with exercises, sets and reps, and a plain-language reason for every choice, or explains why there is no plan. |
 | **Evidence** | What the model rests on and where it stops: the soreness time curve (drawn from the model's own curve), the novelty effect, lengthening work, the stretching finding, and a plain list of limits. |
 
+<table>
+  <tr>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/9bb7751d-0bf3-4b88-b0c9-9dfa2bc99d90" /></td>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/f22023ef-8d67-4939-bac0-637eeb544898" /></td>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/b736a026-08b0-4cdc-8fb2-18735595d0e5" /></td>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/75aebe5d-9b7e-451b-b273-a285ce1be897" /></td>
+  </tr>
+  <tr>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/ecd9aa64-2a84-4c7a-8262-ed974edcda7e" /></td>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/334cdbc7-6ea0-4b58-93d6-ca0bc4798fcb" /></td>
+    <td><img width="220" height="476" alt="image" src="https://github.com/user-attachments/assets/3a4a693e-6c31-4676-9ad5-f0730a759874" /></td>
+  </tr>
+</table>
+
+
+
 ## How it works
 
 **The model proposes, the rules decide.** There is no LLM and no backend. Everything is deterministic TypeScript with tests.
